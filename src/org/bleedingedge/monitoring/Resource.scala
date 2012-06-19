@@ -20,6 +20,7 @@ import java.util.Arrays
 final class Resource(var path : Option[Path])
 {
   require(path.isEmpty, "Cannot construct an empty resource")
+  // This will return the same value for the same resource across multiple JVMs
   val resourceHash = Arrays.hashCode(Files.readAllBytes(path.get))
 
   override def equals(that: Any) = {

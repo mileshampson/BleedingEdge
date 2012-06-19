@@ -13,21 +13,31 @@ package org.bleedingedge.monitoring
 
 import java.nio.file._
 import attribute.BasicFileAttributes
+import logging.LocalLogger
 import scala.collection.mutable.{HashSet => mHSet}
 import scala.collection.mutable.{HashMap => mHMap}
 import scheduling.ThreadPool
+import statechange.LocationStateMachine
 
 class Location(path : Path) {
+  private final val lsm: LocationStateMachine = new LocationStateMachine()
   private final val resources = new mHSet[Resource]
   updateResourcesAt(path)
 
   def updateResourcesAt(location : Path)
   {
     location.toFile.isFile match {
-      case true => resources+=new Resource(Option(location))
+      case true =>
+      {
+        // This may "equal" an existing resource, but have a new path
+        val newResource = new Resource(Option(location))
+        lsm.update(resources.find(p=>p.equals(newResource)), Option(newResource))
+        resources+=newResource
+      }
       case _ => Files.walkFileTree(path, ResourceVisitor)
     }
   }
+
 
   object ResourceVisitor extends SimpleFileVisitor[Path]
   {
@@ -36,6 +46,7 @@ class Location(path : Path) {
 
     override def preVisitDirectory(dirPath:Path, att:BasicFileAttributes):FileVisitResult  =
     {
+      LocalLogger.recordDebug("Watching directory " + dirPath + " for changes")
       watchKeys.put(dirPath.register(watcher, StandardWatchEventKinds.ENTRY_CREATE,
         StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), dirPath)
       FileVisitResult.CONTINUE
@@ -59,25 +70,21 @@ class Location(path : Path) {
     while (true)
     {
       val key = ResourceVisitor.watcher.take()
+
       val it = key.pollEvents().iterator
       while (it.hasNext())
       {
         val event = it.next()
         val kind = event.kind()
         // TODO Do some pattern matching rather than this java type system fail crud
-        val child = ResourceVisitor.watchKeys.get(key).get.resolve(
+        val path = ResourceVisitor.watchKeys.get(key).get.resolve(
           event.asInstanceOf[WatchEvent[Path]].context())
-
-        if (kind == StandardWatchEventKinds.ENTRY_CREATE)
-        {
-          if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS))
-          {
-            updateResourcesAt(child)
-          }
-        }
+        LocalLogger.recordDebug("Received change at " + path)
+        updateResourcesAt(path)
       }
       if (!key.reset())
       {
+        LocalLogger.recordDebug("Stopped watching directory " + path + " for changes")
         ResourceVisitor.watchKeys.remove(key)
       }
     }

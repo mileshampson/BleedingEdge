@@ -9,36 +9,15 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.monitoring.statechange
+package org.bleedingedge.monitoring.logging
 
-import scala.collection.mutable.{Queue => mQueue}
-import org.bleedingedge.monitoring.Resource
-import org.bleedingedge.monitoring.logging.LocalLogger
-
-class LocationStateMachine()
+trait Logger
 {
-  var eventQueue = new mQueue[UpdateEvent]
+  def recordException(exception: Exception)
 
-  def update(oldResource: Option[Resource], newResource: Option[Resource])
-  {
-    logUpdate(oldResource, newResource)
-    val event = new UpdateEvent(oldResource.map{_.path}.get, newResource.map{_.path}.get)
-    // For efficiency if this is a create check if we already have a delete with this
-    // path, in which case the two operations can be replaced by a move operation
-    if (event.eventType == UpdateType.CREATE)
-    {
-      // TODO , also can generalise this to any type of repeated event
-      // TODO should create a "compressed queue" for this instead (and no timestamps!)
-    }
-    eventQueue.enqueue(event)
-  }
+  def recordError(problem: String, resolution: String)
 
-  private def logUpdate(oldResource: Option[Resource], newResource: Option[Resource])
-  {
-    LocalLogger.recordDebug("Updating. Path from " +
-      oldResource.map{_.path}.getOrElse("") + " to " +
-      newResource.map{_.path}.getOrElse("") + " and hash from " +
-      oldResource.map{_.hashCode}.getOrElse("") + " to " +
-      newResource.map{_.hashCode}.getOrElse(""))
-  }
+  def recordEvent(eventString: String)
+
+  def recordDebug(eventString: String)
 }
