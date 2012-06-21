@@ -17,9 +17,10 @@ class UpdateEvent(val path1: Option[Path], val path2: Option[Path])
 {
   val eventType = (path1, path2) match
   {
-    case (Some(from), Some(to)) => UpdateType.MOVE
+    case (Some(from), Some(to)) => UpdateType.MOVE //This case also includes update
     case (Some(location), None) => UpdateType.DELETE
     case (None, Some(to)) => UpdateType.CREATE
+    case _ => UpdateType.NONE
   }
   val timestamp = System.currentTimeMillis()
 }

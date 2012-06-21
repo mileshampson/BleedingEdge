@@ -14,6 +14,7 @@ package org.bleedingedge.monitoring.statechange
 import scala.collection.mutable.{Queue => mQueue}
 import org.bleedingedge.monitoring.Resource
 import org.bleedingedge.monitoring.logging.LocalLogger
+import java.nio.file.Path
 
 class LocationStateMachine()
 {
@@ -22,7 +23,7 @@ class LocationStateMachine()
   def update(oldResource: Option[Resource], newResource: Option[Resource])
   {
     logUpdate(oldResource, newResource)
-    val event = new UpdateEvent(oldResource.map{_.path}.get, newResource.map{_.path}.get)
+    val event = new UpdateEvent(oldResource.map{_.path}.getOrElse(None), newResource.map{_.path}.getOrElse(None))
     // For efficiency if this is a create check if we already have a delete with this
     // path, in which case the two operations can be replaced by a move operation
     if (event.eventType == UpdateType.CREATE)
@@ -36,9 +37,9 @@ class LocationStateMachine()
   private def logUpdate(oldResource: Option[Resource], newResource: Option[Resource])
   {
     LocalLogger.recordDebug("Updating. Path from " +
-      oldResource.map{_.path}.getOrElse("") + " to " +
-      newResource.map{_.path}.getOrElse("") + " and hash from " +
-      oldResource.map{_.hashCode}.getOrElse("") + " to " +
-      newResource.map{_.hashCode}.getOrElse(""))
+      oldResource.map{_.path}.getOrElse("None") + " to " +
+      newResource.map{_.path}.getOrElse("None") + " and hash from " +
+      oldResource.map{_.hashCode}.getOrElse("None") + " to " +
+      newResource.map{_.hashCode}.getOrElse("None"))
   }
 }

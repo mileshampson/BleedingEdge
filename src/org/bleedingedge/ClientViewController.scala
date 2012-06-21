@@ -9,27 +9,13 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.monitoring
+package org.bleedingedge
 
-import java.nio.file._
-import java.util.Arrays
+import java.nio.file.Paths
+import monitoring.Location
 
-/**
- * Uniquely identifies a resource and tracks its current location.
- */
-final class Resource(var path : Option[Path])
+object ClientViewController extends App
 {
-  require(path.isDefined, "Cannot construct an empty resource")
-  // This will return the same value for the same resource across multiple JVMs
-  val resourceHash = Arrays.hashCode(Files.readAllBytes(path.get))
-
-  override def equals(that: Any) = {
-    that match {
-      case r: Resource => r.resourceHash == resourceHash
-      case _ => false
-    }
-  }
-  override def hashCode = resourceHash
+  val path = Paths.get(args(0))
+  new Location(path).startChangeScanning()
 }
-
-

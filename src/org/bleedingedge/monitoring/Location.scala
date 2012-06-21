@@ -66,11 +66,12 @@ class Location(path : Path) {
 
   def scanChanges():Object =
   {
+    LocalLogger.recordDebug("Starting change scanning")
     // TODO status code loop condition, or The Little Turing Machine That Could (halt)
     while (true)
     {
       val key = ResourceVisitor.watcher.take()
-
+      LocalLogger.recordDebug("Notifed of change")
       val it = key.pollEvents().iterator
       while (it.hasNext())
       {

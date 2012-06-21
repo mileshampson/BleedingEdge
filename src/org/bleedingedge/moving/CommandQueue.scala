@@ -13,7 +13,6 @@ package org.bleedingedge.moving
 
 import scala.collection.mutable.{Queue => mQueue}
 import org.bleedingedge.monitoring.statechange.{UpdateType, UpdateEvent}
-import org.bleedingedge.monitoring.{UpdateType, UpdateEvent}
 
 class CommandQueue()
 {
