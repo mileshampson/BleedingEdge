@@ -11,35 +11,38 @@
 
 package org.bleedingedge.monitoring.statechange
 
-import scala.collection.mutable.{Queue => mQueue}
+import scala.collection.mutable.{Queue => mQueue, HashSet => mHSet}
 import org.bleedingedge.monitoring.Resource
-import org.bleedingedge.monitoring.logging.LocalLogger
 import java.nio.file.Path
 
-class LocationStateMachine()
+class LocationState()
 {
-  var eventQueue = new mQueue[UpdateEvent]
+  private final val resources = new mHSet[Resource]
 
-  def update(oldResource: Option[Resource], newResource: Option[Resource])
+  def updateResourceAt(path : Path)
   {
-    logUpdate(oldResource, newResource)
-    val event = new UpdateEvent(oldResource.map{_.path}.getOrElse(None), newResource.map{_.path}.getOrElse(None))
-    // For efficiency if this is a create check if we already have a delete with this
-    // path, in which case the two operations can be replaced by a move operation
-    if (event.eventType == UpdateType.CREATE)
-    {
-      // TODO , also can generalise this to any type of repeated event
-      // TODO should create a "compressed queue" for this instead (and no timestamps!)
-    }
-    eventQueue.enqueue(event)
+    // The resource equality definition means this will update the path of an existing resource
+    resources+=new Resource(Option(path))
   }
 
-  private def logUpdate(oldResource: Option[Resource], newResource: Option[Resource])
+  def compareToState(secondState: LocationState): mQueue[UpdateEvent] =
   {
-    LocalLogger.recordDebug("Updating. Path from " +
-      oldResource.map{_.path}.getOrElse("None") + " to " +
-      newResource.map{_.path}.getOrElse("None") + " and hash from " +
-      oldResource.map{_.hashCode}.getOrElse("None") + " to " +
-      newResource.map{_.hashCode}.getOrElse("None"))
+    val eventQueue = new mQueue[UpdateEvent]
+    resources.foreach {firstResource =>
+      {
+        val secondResource: Option[Resource] = secondState.resources.find(p=>p.equals(firstResource))
+        val event = new UpdateEvent(Option(firstResource), secondResource)
+        if (event.updateType != UpdateType.NONE) eventQueue.enqueue()
+      }
+    }
+    // Iterating over the old resources will miss any CREATEs (resources only in the new resource set)
+    secondState.resources.foreach {secondResource =>
+      {
+        val firstResource: Option[Resource] = resources.find(p=>p.equals(secondResource))
+        val event = new UpdateEvent(firstResource, Option(secondResource))
+        if (event.updateType == UpdateType.CREATE) eventQueue.enqueue(event)
+      }
+    }
+    eventQueue
   }
 }

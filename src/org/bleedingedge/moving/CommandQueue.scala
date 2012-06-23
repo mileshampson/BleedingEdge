@@ -20,8 +20,9 @@ class CommandQueue()
 
   def addCommandFrom(event: UpdateEvent)
   {
-    event.eventType match
+    event.updateType match
     {
+      // TODO need to map the resource at UpdateType path to a file and pass it to the command
       case UpdateType.MOVE => commandQueue.enqueue(new MoveCommand(event.path1.get, event.path2.get))
       case UpdateType.DELETE => commandQueue.enqueue(new DeleteCommand(event.path1.get))
       case UpdateType.CREATE => commandQueue.enqueue(new CreateCommand(event.path1.get, event.path2.get))

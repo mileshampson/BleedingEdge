@@ -12,15 +12,23 @@
 package org.bleedingedge.monitoring.statechange
 
 import java.nio.file.Path
+import org.bleedingedge.monitoring.Resource
 
-class UpdateEvent(val path1: Option[Path], val path2: Option[Path])
+class UpdateEvent(resource1: Option[Resource], resource2: Option[Resource])
 {
-  val eventType = (path1, path2) match
+  require(resource1.equals(resource2), "This event only handles two path states of the same resource")
+  val path1: Option[Path] = resource1.map{_.path}.getOrElse(None)
+  val path2: Option[Path] = resource2.map{_.path}.getOrElse(None)
+
+  val updateType = (path1, path2) match
   {
-    case (Some(from), Some(to)) => UpdateType.MOVE //This case also includes update
+    case (Some(from), Some(to)) =>
+    {
+      if(from.equals(to)) UpdateType.NONE // Since only one resource updates are seen as delete/create
+      else UpdateType.MOVE
+    }
     case (Some(location), None) => UpdateType.DELETE
     case (None, Some(to)) => UpdateType.CREATE
     case _ => UpdateType.NONE
   }
-  val timestamp = System.currentTimeMillis()
 }

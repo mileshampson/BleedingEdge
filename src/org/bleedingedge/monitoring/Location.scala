@@ -14,30 +14,22 @@ package org.bleedingedge.monitoring
 import java.nio.file._
 import attribute.BasicFileAttributes
 import logging.LocalLogger
-import scala.collection.mutable.{HashSet => mHSet}
 import scala.collection.mutable.{HashMap => mHMap}
 import scheduling.ThreadPool
-import statechange.LocationStateMachine
+import statechange.LocationState
 
 class Location(path : Path) {
-  private final val lsm: LocationStateMachine = new LocationStateMachine()
-  private final val resources = new mHSet[Resource]
+  private final val currentState: LocationState = new LocationState()
+
   updateResourcesAt(path)
 
   def updateResourcesAt(location : Path)
   {
     location.toFile.isFile match {
-      case true =>
-      {
-        // This may "equal" an existing resource, but have a new path
-        val newResource = new Resource(Option(location))
-        lsm.update(resources.find(p=>p.equals(newResource)), Option(newResource))
-        resources+=newResource
-      }
+      case true => currentState.updateResourceAt(location)
       case _ => Files.walkFileTree(path, ResourceVisitor)
     }
   }
-
 
   object ResourceVisitor extends SimpleFileVisitor[Path]
   {
