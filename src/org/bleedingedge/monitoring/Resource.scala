@@ -13,23 +13,39 @@ package org.bleedingedge.monitoring
 
 import java.nio.file._
 import java.util.Arrays
+import org.bleedingedge.monitoring.logging.LocalLogger
+import java.security.MessageDigest
+import java.math.BigInteger
 
 /**
- * Uniquely identifies a resource and tracks its current location.
+ * Uniquely identifies a resource from its current state in the specified location.
+ * Any resources that are considered unequal can later be split and the hashes of
+ * the split components compared to see which section needs to be transmitted.
  */
-final class Resource(var path : Option[Path])
+final class Resource(path : Path)
 {
-  require(path.isDefined, "Cannot construct an empty resource")
+  require(path != null, "Cannot construct an empty resource")
   // This will return the same value for the same resource across multiple JVMs
-  val resourceHash = Arrays.hashCode(Files.readAllBytes(path.get))
+  val resourceHash = new BigInteger(1, MessageDigest.getInstance("MD5").digest(
+    Files.readAllBytes(path))).toString(16)
+  LocalLogger.recordDebug("Hash for " + path + " is " + resourceHash)
 
+  // Equal Resources always return true, but there is also an exceedingly small
+  // chance of the md5 hash of the bytes of two different files also being equal.
+  // This does not violate the equals contract, but means it is theoretically
+  // possible that a file change may be missed at some point.
   override def equals(that: Any) = {
     that match {
-      case r: Resource => r.resourceHash == resourceHash
+      case r: Resource => r.resourceHash.equals(resourceHash)
       case _ => false
     }
   }
-  override def hashCode = resourceHash
+
+  // The 32 bit space of possible hashes here is less than the 128 bit space of possible
+  // md5 hashes that can be identifying the resource. The only impact in the rare event
+  // of different Resources having the same hash will be a small performance penalty on
+  // the lookup of those Resources in hash based data structures holding them.
+  override def hashCode = resourceHash.hashCode
 }
 
 
