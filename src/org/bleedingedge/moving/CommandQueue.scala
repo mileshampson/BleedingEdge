@@ -12,20 +12,20 @@
 package org.bleedingedge.moving
 
 import scala.collection.mutable.{Queue => mQueue}
-import org.bleedingedge.monitoring.statechange.{UpdateType, UpdateEvent}
+import org.bleedingedge.monitoring.statechange.{UpdateType}
 
 class CommandQueue()
 {
   var commandQueue = new mQueue[Command]
 
-  def addCommandFrom(event: UpdateEvent)
-  {
-    event.updateType match
-    {
-      // TODO need to map the resource at UpdateType path to a file and pass it to the command
-      case UpdateType.MOVE => commandQueue.enqueue(new MoveCommand(event.path1.get, event.path2.get))
-      case UpdateType.DELETE => commandQueue.enqueue(new DeleteCommand(event.path1.get))
-      case UpdateType.CREATE => commandQueue.enqueue(new CreateCommand(event.path1.get, event.path2.get))
-    }
-  }
+//  def addCommandFrom(event: LocationStateDelta)
+//  {
+//    event.updateType match
+//    {
+//      // TODO need to map the resource at UpdateType path to a file and pass it to the command
+//      case UpdateType.MOVE => commandQueue.enqueue(new MoveCommand(event.path1.get, event.path2.get))
+//      case UpdateType.DELETE => commandQueue.enqueue(new DeleteCommand(event.path1.get))
+//      case UpdateType.CREATE => commandQueue.enqueue(new CreateCommand(event.path1.get, event.path2.get))
+//    }
+//  }
 }

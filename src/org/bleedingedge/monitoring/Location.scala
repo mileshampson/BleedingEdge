@@ -19,7 +19,7 @@ import scheduling.ThreadPool
 import statechange.LocationState
 
 class Location(path : Path) {
-  private final val currentState: LocationState = new LocationState()
+  val currentState: LocationState = new LocationState()
 
   updateResourcesAt(path)
 

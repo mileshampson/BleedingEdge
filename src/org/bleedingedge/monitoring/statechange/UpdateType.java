@@ -12,5 +12,5 @@
 package org.bleedingedge.monitoring.statechange;
 
 public enum UpdateType {
-    NONE, MOVE, CREATE, DELETE;
+    NONE, CREATE, DELETE, MOVE, UPDATE, RENAME
 }

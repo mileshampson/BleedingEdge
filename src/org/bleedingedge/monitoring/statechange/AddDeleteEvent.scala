@@ -11,26 +11,34 @@
 
 package org.bleedingedge.monitoring.statechange
 
-import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, MapProxy=> mProx}
-import java.nio.file.Path
 import org.bleedingedge.monitoring.Resource
+import java.nio.file.Path
 
-class LocationState()
+class AddDeleteEvent(val addResource: Resource, val addPath: Option[Path], deleteResource: Resource, deletePath: Option[Path])
 {
-  private final val resources = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path]
+  var eventType:UpdateType = UpdateType.NONE
 
-  def updateResourceAt(path : Path)
+  // Assume delete and create are given as the same resource but with an optional path
+  if (addPath.isEmpty)
   {
-    require(path != null, "We never receive updates with null path")
-    resources.addBinding(new Resource(path), path)
+    eventType = UpdateType.DELETE
   }
-
-  // The stored resources that currently exist on the filesystem. TODO pre-compute for network transfer
-  def getExistingResources(): mMMap[Resource, Path] =
+  else if (deletePath.isEmpty)
   {
-    new mProx[Resource,Set[Path]] with mMMap[Resource, Path] {
-      val self = resources.map{case (res, pths) => (res, pths.filter(pth => pth.toFile.exists()))}.filter(_._2.nonEmpty)
+    eventType = UpdateType.CREATE
+  }
+  else if (addResource.equals(deleteResource))
+  {
+    // A path for the same Resource that has been added then deleted, or visa versa, is ignored as a NOP, otherwise move
+    if (!addPath.get.equals(deletePath.get))
+    {
+      // Treat paths that only differ in the last element as a special case of move, RENAME
+      eventType =  if(addPath.get.getFileName.equals(deletePath.get.getParent)) UpdateType.RENAME else UpdateType.MOVE
     }
   }
-
+  // Different resources with the same path can be treated as an update
+  else if (addPath.get.equals(deletePath.get))
+  {
+    eventType = UpdateType.UPDATE
+  }
 }

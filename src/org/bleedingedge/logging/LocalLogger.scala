@@ -79,9 +79,12 @@ object LocalLogger extends Logger
 
     def debug(debug: String)
     {
-      println(debug)
-      debugWriter.println(debug)
-      debugWriter.flush()
+      // TODO remove this when we make switch to actors for logging
+      this.synchronized {
+        println(debug)
+        debugWriter.println(debug)
+        debugWriter.flush()
+      }
     }
 
     override def finalize()

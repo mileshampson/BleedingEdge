@@ -24,10 +24,12 @@ import java.math.BigInteger
  */
 final class Resource(path : Path)
 {
-  require(path != null, "Cannot construct an empty resource")
   // This will return the same value for the same resource across multiple JVMs
   val resourceHash = new BigInteger(1, MessageDigest.getInstance("MD5").digest(
     Files.readAllBytes(path))).toString(16)
+  // A slight optimisation to comparison time, at the expense of having to transmit more information,
+  // is to also store file length to avoid comparing long hash strings for unequally sized files
+  val fileLength = path.toFile.length()
   LocalLogger.recordDebug("Hash for " + path + " is " + resourceHash)
 
   // Equal Resources always return true, but there is also an exceedingly small
@@ -36,7 +38,7 @@ final class Resource(path : Path)
   // possible that a file change may be missed at some point.
   override def equals(that: Any) = {
     that match {
-      case r: Resource => r.resourceHash.equals(resourceHash)
+      case r: Resource => r.fileLength == fileLength && r.resourceHash.equals(resourceHash)
       case _ => false
     }
   }
