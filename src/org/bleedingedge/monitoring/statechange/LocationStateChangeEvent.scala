@@ -11,25 +11,45 @@
 
 package org.bleedingedge.monitoring.statechange
 
-import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, Queue => mQueue}
-import java.nio.file.Path
 import org.bleedingedge.monitoring.Resource
-import collection.mutable
+import java.nio.file.Path
 
-class LocationState()
+class LocationStateChangeEvent(val oldResPath: Option[(Resource, Path)], val newResPath: Option[(Resource, Path)])
 {
-  private final val resources = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path]
+  var eventType:UpdateType = UpdateType.NOT_RELATED
 
-  def updateResourceAt(path : Path)
+  if (oldResPath.isEmpty)
   {
-    require(path != null, "We never receive updates with null path")
-    resources.addBinding(new Resource(path), path)
+    eventType = UpdateType.CREATE
   }
-
-  // The stored resources that currently exist on the filesystem. TODO pre-compute for network transfer
-  def getExistingResources(): mQueue[(Resource, Path)] =
+  else if (newResPath.isEmpty)
   {
-    mQueue[(Resource, Path)]() ++=
-      resources.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten
+    eventType = UpdateType.DELETE
+  }
+  // The same resource in both parameters
+  else if (newResPath.get._1.equals(oldResPath.get._1))
+  {
+    if (newResPath.get._2.equals(oldResPath.get._2))
+    {
+      // The same resource has an identical path in the add and delete events (they cancel each other out) or no event
+      // has occurred (start and end are the same), in either case we can treat this as a NOP
+      eventType =  UpdateType.NO_CHANGE
+    }
+    // The same resource with a different path is a move
+    else
+    {
+      // Treat paths that only differ in the last element as a special case of move, RENAME
+      eventType =  if(newResPath.get._2.getFileName.equals(oldResPath.get._2.getParent)) UpdateType.RENAME
+                   else UpdateType.MOVE
+    }
+  }
+  // Different resources with the same path can be treated as an update
+  else if (newResPath.get._2.equals(oldResPath.get._2))
+  {
+    eventType = UpdateType.UPDATE
+  }
+  // Both the resource and the path are unrelated.
+  else {
+    eventType = UpdateType.NOT_RELATED
   }
 }

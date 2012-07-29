@@ -9,26 +9,23 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.monitoring.statechange
+package org.bleedingedge.monitoring
 
+import statechange.{LocationStateChangeEvent, LocationState, LocationStateDelta}
+import collection.mutable.{Queue => mQueue}
 import java.nio.file.Path
-import org.bleedingedge.monitoring.Resource
 
-class UpdateEvent(resource1: Option[Resource], resource2: Option[Resource])
+class LocationChangeQueue
 {
-  require(resource1.equals(resource2), "This event only handles two path states of the same resource")
-  val path1: Option[Path] = resource1.map{_.path}.getOrElse(None)
-  val path2: Option[Path] = resource2.map{_.path}.getOrElse(None)
+  private val baseline = new LocationStateDelta()
+  var currentState = new LocationState()
+  val stateChangeQueue: mQueue[LocationStateChangeEvent] = new mQueue[LocationStateChangeEvent]()
 
-  val updateType = (path1, path2) match
+  def processLocationUpdate(updatedPath: Path)
   {
-    case (Some(from), Some(to)) =>
-    {
-      if(from.equals(to)) UpdateType.NONE // Since only one resource updates are seen as delete/create
-      else UpdateType.MOVE
-    }
-    case (Some(location), None) => UpdateType.DELETE
-    case (None, Some(to)) => UpdateType.CREATE
-    case _ => UpdateType.NONE
+    currentState.updateResourceAt(updatedPath)
+    stateChangeQueue ++= baseline.computeDeltaToState(currentState)
+    currentState = new LocationState()
   }
+
 }

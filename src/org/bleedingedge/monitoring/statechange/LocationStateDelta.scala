@@ -14,48 +14,31 @@ package org.bleedingedge.monitoring.statechange
 import java.nio.file.Path
 import org.bleedingedge.monitoring.Resource
 import collection.mutable.{MultiMap => mMMap, Queue => mQueue}
+import collection.mutable
 
 class LocationStateDelta()
 {
   var baselineState = new LocationState()
 
-  def computeDeltaToState(newState: LocationState): mQueue[AddDeleteEvent]   =
+  def computeDeltaToState(newState: LocationState): mQueue[LocationStateChangeEvent]   =
   {
-    val eventQueue = new mQueue[AddDeleteEvent]
-    val addDelLists = compareResourcesWith(newState)
-    // TODO create queue of add and remove events
-    // TODO remove NONEs, anything left over needs to be removed from the queue of add and remove events
-    addDelLists._1.foreach(addElm => addDelLists._2.foreach(delElm => eventQueue.enqueue(
-      new AddDeleteEvent(addElm._1, Option(addElm._2), delElm._1, Option(delElm._2)))))
-    eventQueue
-  }
-
-  // A sequence of all the added, and a sequence of all the deleted, resources between the specified location states
-  private def compareResourcesWith(newState: LocationState): (Seq[(Resource, Path)], Seq[(Resource, Path)]) =
-  {
+    val eventQueue = new mQueue[LocationStateChangeEvent]
     val oldResources  = baselineState.getExistingResources()
     val newResources  = newState.getExistingResources()
-    val deletedResources = oldResources -- newResources.keys
-    val addedResources = newResources -- oldResources.keys
-    val equalResources = oldResources -- deletedResources.keys
-    for (equalResource <- equalResources)
-    {
-      val oldPaths = equalResource._2
-      // This Option has to be a Some by the above definition of Equal resources
-      val newPaths = newResources.get(equalResource._1).get
-      require(!newPaths.isEmpty, "Assumes the LocationState has stripped out resources with no paths")
-      val deletedPaths = oldPaths -- newPaths
-      if (!deletedPaths.isEmpty)
-      {
-        deletedResources.put(equalResource._1, deletedPaths)
-      }
-      val addedPaths = newPaths -- oldPaths
-      if (!addedPaths.isEmpty)
-      {
-        addedResources.put(equalResource._1, addedPaths)
-      }
-
+    // Pair each old resource against a new resource to generate an event.
+    while (!oldResources.isEmpty) {
+      val (oldResource, oldPath) = oldResources.dequeue()
+      val eventCandidate:Option[(Resource, Path)] = newResources.find(newResource => new LocationStateChangeEvent(
+        Option(oldResource, oldPath), Option(newResource._1, newResource._2)).eventType != UpdateType.NOT_RELATED)
+      eventQueue.enqueue(new LocationStateChangeEvent(Option(oldResource, oldPath), eventCandidate))
+      if (eventCandidate.isDefined) newResources.dequeueFirst(newResource => newResource.equals(eventCandidate.get))
     }
-    (addedResources.flatten.toList, deletedResources.flatten.toList)
+    // Add all create events
+    while (!newResources.isEmpty) {
+      val (newResource, newPath) = newResources.dequeue()
+      eventQueue.enqueue(new LocationStateChangeEvent(None, Option(newResource, newPath)))
+    }
+    // All event candidates get added
+    eventQueue
   }
 }

@@ -19,14 +19,14 @@ import scheduling.ThreadPool
 import statechange.LocationState
 
 class Location(path : Path) {
-  val currentState: LocationState = new LocationState()
+  val locationChanges = new LocationChangeQueue()
 
   updateResourcesAt(path)
 
   def updateResourcesAt(location : Path)
   {
     location.toFile.isFile match {
-      case true => currentState.updateResourceAt(location)
+      case true => locationChanges.processLocationUpdate(location)
       case _ => Files.walkFileTree(path, ResourceVisitor)
     }
   }

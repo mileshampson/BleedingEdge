@@ -9,36 +9,36 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.monitoring.statechange
+package org.bleedingedge.monitoring
 
-import org.bleedingedge.monitoring.Resource
-import java.nio.file.Path
+import org.bleedingedge.monitoring.logging.LocalLogger
 
-class AddDeleteEvent(val addResource: Resource, val addPath: Option[Path], deleteResource: Resource, deletePath: Option[Path])
+abstract class TestHarness extends App
 {
-  var eventType:UpdateType = UpdateType.NONE
-
-  // Assume delete and create are given as the same resource but with an optional path
-  if (addPath.isEmpty)
+  try
   {
-    eventType = UpdateType.DELETE
+    setUp()
+    runTests()
+    tearDown()
+    LocalLogger.recordDebug("All tests passed! Exiting test harness")
   }
-  else if (deletePath.isEmpty)
+  catch
   {
-    eventType = UpdateType.CREATE
-  }
-  else if (addResource.equals(deleteResource))
-  {
-    // A path for the same Resource that has been added then deleted, or visa versa, is ignored as a NOP, otherwise move
-    if (!addPath.get.equals(deletePath.get))
+    case assertionEr: AssertionError =>
     {
-      // Treat paths that only differ in the last element as a special case of move, RENAME
-      eventType =  if(addPath.get.getFileName.equals(deletePath.get.getParent)) UpdateType.RENAME else UpdateType.MOVE
+      LocalLogger.recordDebug(assertionEr.toString)
+      LocalLogger.recordDebug("A test failed! Exiting test harness")
+      tearDown()
     }
   }
-  // Different resources with the same path can be treated as an update
-  else if (addPath.get.equals(deletePath.get))
+  System.exit(0)
+
+  def setUp()
+  def tearDown()
+  def runTests()
+  def assertCondition(condition: Boolean, failMsg: String, passMsg: String)
   {
-    eventType = UpdateType.UPDATE
+    assert(condition, failMsg)
+    LocalLogger.recordDebug(passMsg)
   }
 }
