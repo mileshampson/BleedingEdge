@@ -14,11 +14,15 @@ package org.bleedingedge.monitoring.statechange
 import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, Queue => mQueue}
 import java.nio.file.Path
 import org.bleedingedge.monitoring.Resource
-import collection.mutable
 
-class LocationState()
+/**
+ * The resources that exist in a location at the current time
+ */
+class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]])
 {
-  private final val resources = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path]
+  def this(other: LocationState) = {
+    this(other.resources.clone())
+  }
 
   def updateResourceAt(path : Path)
   {
@@ -26,10 +30,42 @@ class LocationState()
     resources.addBinding(new Resource(path), path)
   }
 
-  // The stored resources that currently exist on the filesystem. TODO pre-compute for network transfer
+  /**
+   *  The stored resources that currently exist on the filesystem.
+   */
   def getExistingResources(): mQueue[(Resource, Path)] =
   {
+    //TODO check if we need to switch to immutable data structures or do defensive copies here
     mQueue[(Resource, Path)]() ++=
       resources.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten
+  }
+
+  /**
+   * Provides the sequence of events that transform the current location state into the specified location state.
+   * @param newState to calculate transform to.
+   * @return a queue containing a set of events that will carry out the requested transform.
+   */
+  def computeDeltaToState(newState: LocationState): mQueue[LocationStateChangeEvent]   =
+  {
+    val eventQueue = new mQueue[LocationStateChangeEvent]
+    val oldResources = getExistingResources()
+    val newResources = newState.getExistingResources()
+    // Pair each old resource against a new resource to generate an event.
+    while (!oldResources.isEmpty)
+    {
+      val (oldResource, oldPath) = oldResources.dequeue()
+      val eventCandidate:Option[(Resource, Path)] = newResources.find(newResource => new LocationStateChangeEvent(
+        Option(oldResource, oldPath), Option(newResource._1, newResource._2)).eventType != UpdateType.NOT_RELATED)
+      eventQueue.enqueue(new LocationStateChangeEvent(Option(oldResource, oldPath), eventCandidate))
+      if (eventCandidate.isDefined) newResources.dequeueFirst(newResource => newResource.equals(eventCandidate.get))
+    }
+    // Add all create events
+    while (!newResources.isEmpty)
+    {
+      val (newResource, newPath) = newResources.dequeue()
+      eventQueue.enqueue(new LocationStateChangeEvent(None, Option(newResource, newPath)))
+    }
+    // All event candidates get added so we need to filter out the NOPs.
+    eventQueue.filterNot(event => event.eventType == UpdateType.NO_CHANGE).toQueue
   }
 }

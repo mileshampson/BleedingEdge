@@ -12,33 +12,25 @@
 package org.bleedingedge.monitoring.statechange
 
 import java.nio.file.Path
+import collection.mutable.{Queue => mQueue}
 import org.bleedingedge.monitoring.Resource
-import collection.mutable.{MultiMap => mMMap, Queue => mQueue}
-import collection.mutable
 
-class LocationStateDelta()
+/**
+ * A network transferable specialisation of a location state
+ * @param precomputedExistingPaths paths that exist at the current location
+ */
+class ImmutableLocationState(private val precomputedExistingPaths: mQueue[(Resource, Path)]) extends LocationState
 {
-  var baselineState = new LocationState()
-
-  def computeDeltaToState(newState: LocationState): mQueue[LocationStateChangeEvent]   =
+  /**
+   * No update of resources is possible for this class
+   * @param path will be ignored
+   */
+  override def updateResourceAt(path : Path)
   {
-    val eventQueue = new mQueue[LocationStateChangeEvent]
-    val oldResources  = baselineState.getExistingResources()
-    val newResources  = newState.getExistingResources()
-    // Pair each old resource against a new resource to generate an event.
-    while (!oldResources.isEmpty) {
-      val (oldResource, oldPath) = oldResources.dequeue()
-      val eventCandidate:Option[(Resource, Path)] = newResources.find(newResource => new LocationStateChangeEvent(
-        Option(oldResource, oldPath), Option(newResource._1, newResource._2)).eventType != UpdateType.NOT_RELATED)
-      eventQueue.enqueue(new LocationStateChangeEvent(Option(oldResource, oldPath), eventCandidate))
-      if (eventCandidate.isDefined) newResources.dequeueFirst(newResource => newResource.equals(eventCandidate.get))
-    }
-    // Add all create events
-    while (!newResources.isEmpty) {
-      val (newResource, newPath) = newResources.dequeue()
-      eventQueue.enqueue(new LocationStateChangeEvent(None, Option(newResource, newPath)))
-    }
-    // All event candidates get added
-    eventQueue
+  }
+
+  override def getExistingResources(): mQueue[(Resource, Path)] =
+  {
+    precomputedExistingPaths
   }
 }

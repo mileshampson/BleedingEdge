@@ -2,15 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="122b9d96-3017-46e3-b339-ac4adfbf5a42" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala" />
-      <change type="DELETED" beforePath="C:\Dropbox\CodeSpace\BleedingEdge\src\org\bleedingedge\monitoring\statechange\UpdateEvent.scala" afterPath="" />
-      <change type="MOVED" beforePath="C:\Dropbox\CodeSpace\BleedingEdge\src\org\bleedingedge\monitoring\statechange\AddDeleteEvent.scala" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateChangeEvent.scala" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/ImmutableLocationState.scala" />
+      <change type="DELETED" beforePath="C:\Dropbox\CodeSpace\BleedingEdge\src\org\bleedingedge\monitoring\statechange\LocationStateDelta.scala" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/BleedingEdge.iml" afterPath="$PROJECT_DIR$/BleedingEdge.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/Location.scala" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/Location.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateDelta.scala" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateDelta.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/UpdateType.java" afterPath="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/UpdateType.java" />
     </list>
     <ignored path="BleedingEdge.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -72,43 +68,36 @@
     <favorites_list name="BleedingEdge" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.5">
+    <splitter split-orientation="horizontal" split-proportion="0.477027">
       <split-first>
         <leaf>
           <file leaf-file-name="LocationState.scala" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="35" column="79" selection-start="2158" selection-end="2158" vertical-scroll-proportion="0.0">
-                  <folding />
+                <state line="42" column="8" selection-start="2330" selection-end="2330" vertical-scroll-proportion="0.0">
+                  <folding>
+                    <element signature="e#1363#1456#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="UpdateType.java" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/UpdateType.java">
+          <file leaf-file-name="ImmutableLocationState.scala" pinned="false" current="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/ImmutableLocationState.scala">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="16" column="45" selection-start="1456" selection-end="1456" vertical-scroll-proportion="0.0">
-                  <folding />
+                <state line="24" column="31" selection-start="1777" selection-end="1777" vertical-scroll-proportion="0.0">
+                  <folding>
+                    <element signature="e#1363#1388#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="LocationStateDelta.scala" pinned="false" current="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateDelta.scala">
-              <provider selected="true" editor-type-id="text-editor">
-                <state line="15" column="0" selection-start="1433" selection-end="1495" vertical-scroll-proportion="0.0">
-                  <folding />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="LocationChangeQueue.scala" pinned="false" current="false" current-in-tab="true">
+          <file leaf-file-name="LocationChangeQueue.scala" pinned="false" current="true" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="29" column="67" selection-start="1930" selection-end="1930" vertical-scroll-proportion="0.3794643">
-                  <folding>
-                    <element signature="e#1351#1431#0" expanded="true" />
-                  </folding>
+                <state line="35" column="73" selection-start="2218" selection-end="2218" vertical-scroll-proportion="0.3523316">
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -135,19 +124,19 @@
       </split-first>
       <split-second>
         <leaf>
-          <file leaf-file-name="MonitorLocationTest.scala" pinned="false" current="false" current-in-tab="false">
+          <file leaf-file-name="MonitorLocationTest.scala" pinned="false" current="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/tests/org/bleedingedge/monitoring/MonitorLocationTest.scala">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="36" column="93" selection-start="1866" selection-end="1866" vertical-scroll-proportion="0.0">
+                <state line="36" column="93" selection-start="1866" selection-end="1866" vertical-scroll-proportion="0.39637306">
                   <folding />
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="LocationMutator.scala" pinned="false" current="true" current-in-tab="true">
+          <file leaf-file-name="LocationMutator.scala" pinned="false" current="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/tests/org/bleedingedge/monitoring/LocationMutator.scala">
               <provider selected="true" editor-type-id="text-editor">
-                <state line="15" column="35" selection-start="1448" selection-end="1448" vertical-scroll-proportion="0.11383928">
+                <state line="15" column="35" selection-start="1448" selection-end="1448" vertical-scroll-proportion="0.0">
                   <folding />
                 </state>
               </provider>
@@ -168,7 +157,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/org/bleedingedge/moving/CommandQueue.scala" />
         <option value="$PROJECT_DIR$/tests/org/bleedingedge/monitoring/LocationChangeUtility.scala" />
         <option value="$PROJECT_DIR$/tests/org/bleedingedge/monitoring/TestHarness.scala" />
         <option value="$PROJECT_DIR$/tests/org/bleedingedge/monitoring/LocationMutator.scala" />
@@ -177,13 +165,14 @@
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/UpdateEvent.scala" />
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/Resource.scala" />
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/AddDeleteEvent.scala" />
-        <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala" />
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/UpdateType.java" />
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateDelta.scala" />
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateChangeEvent.scala" />
         <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/Location.scala" />
-        <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala" />
         <option value="$PROJECT_DIR$/tests/org/bleedingedge/monitoring/MonitorLocationTest.scala" />
+        <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala" />
+        <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala" />
+        <option value="$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/ImmutableLocationState.scala" />
       </list>
     </option>
   </component>
@@ -244,16 +233,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope">
-        <subPane subId="Project Files">
-          <PATH>
-            <PATH_ELEMENT USER_OBJECT="Root">
-              <option name="myItemId" value="" />
-              <option name="myItemType" value="" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -380,6 +359,16 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope">
+        <subPane subId="Project Files">
+          <PATH>
+            <PATH_ELEMENT USER_OBJECT="Root">
+              <option name="myItemId" value="" />
+              <option name="myItemType" value="" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
+      </pane>
       <pane id="PackagesPane">
         <subPane>
           <PATH>
@@ -413,9 +402,9 @@
     <property name="com.intellij.testIntegration.createTest.CreateTestDialog.includeInheritedMembers" value="true" />
     <property name="MemberChooser.showClasses" value="true" />
     <property name="GoToClass.includeLibraries" value="false" />
-    <property name="dynamic.classpath" value="false" />
-    <property name="options.searchVisible" value="true" />
     <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.searchVisible" value="true" />
+    <property name="dynamic.classpath" value="false" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -506,6 +495,19 @@
         <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
       </method>
     </configuration>
+    <configuration default="true" type="Remote" factoryName="Remote">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" value="javadebug" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+        <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
+      </method>
+    </configuration>
     <configuration default="true" type="Specs2RunConfiguration" factoryName="Specs2">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <extension name="scalaCoverage" />
@@ -527,15 +529,21 @@
         <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
       </method>
     </configuration>
-    <configuration default="true" type="Remote" factoryName="Remote">
-      <option name="USE_SOCKET_TRANSPORT" value="true" />
-      <option name="SERVER_MODE" value="false" />
-      <option name="SHMEM_ADDRESS" value="javadebug" />
-      <option name="HOST" value="localhost" />
-      <option name="PORT" value="5005" />
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <module name="" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="HTML_FILE_NAME" />
+      <option name="HTML_USED" value="false" />
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <option name="VM_PARAMETERS" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
         <option name="Maven.BeforeRunTask" enabled="false" />
         <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
       </method>
@@ -566,25 +574,6 @@
       <envs />
       <properties />
       <listeners />
-      <method>
-        <option name="AntTarget" enabled="false" />
-        <option name="BuildArtifacts" enabled="false" />
-        <option name="Make" enabled="true" />
-        <option name="Maven.BeforeRunTask" enabled="false" />
-        <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
-      </method>
-    </configuration>
-    <configuration default="true" type="Applet" factoryName="Applet">
-      <module name="" />
-      <option name="MAIN_CLASS_NAME" />
-      <option name="HTML_FILE_NAME" />
-      <option name="HTML_USED" value="false" />
-      <option name="WIDTH" value="400" />
-      <option name="HEIGHT" value="300" />
-      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
-      <option name="VM_PARAMETERS" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
-      <option name="ALTERNATIVE_JRE_PATH" />
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
@@ -641,6 +630,21 @@
         <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
       </method>
     </configuration>
+    <configuration default="true" type="ScalaScriptRunConfiguration" factoryName="Scala Script">
+      <module name="" />
+      <setting name="path" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="consoleargs" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="$PROJECT_DIR$" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+        <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
+      </method>
+    </configuration>
     <configuration default="true" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
       <extension name="scalaCoverage" />
@@ -654,21 +658,6 @@
       <setting name="testName" value="" />
       <setting name="testKind" value="Class" />
       <setting name="showProgressMessages" value="true" />
-      <method>
-        <option name="AntTarget" enabled="false" />
-        <option name="BuildArtifacts" enabled="false" />
-        <option name="Make" enabled="true" />
-        <option name="Maven.BeforeRunTask" enabled="false" />
-        <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
-      </method>
-    </configuration>
-    <configuration default="true" type="ScalaScriptRunConfiguration" factoryName="Scala Script">
-      <module name="" />
-      <setting name="path" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="consoleargs" value="" />
-      <setting name="params" value="" />
-      <setting name="workingDirectory" value="$PROJECT_DIR$" />
       <method>
         <option name="AntTarget" enabled="false" />
         <option name="BuildArtifacts" enabled="false" />
@@ -707,9 +696,9 @@
     </configuration>
     <list size="4">
       <item index="0" class="java.lang.String" itemvalue="Application.ClientViewController" />
-      <item index="1" class="java.lang.String" itemvalue="Application.MonitorLocationTest" />
-      <item index="2" class="java.lang.String" itemvalue="Scala Console.Scala Console" />
-      <item index="3" class="java.lang.String" itemvalue="Specs2.LocationStateMachineTest" />
+      <item index="1" class="java.lang.String" itemvalue="Scala Console.Scala Console" />
+      <item index="2" class="java.lang.String" itemvalue="Specs2.LocationStateMachineTest" />
+      <item index="3" class="java.lang.String" itemvalue="Application.MonitorLocationTest" />
     </list>
     <configuration name="&lt;template&gt;" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" default="true" selected="false">
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m" />
@@ -753,32 +742,32 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="2576" height="1576" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Data Sources" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32944608" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.16454802" sideWeight="0.9974249" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.16454802" sideWeight="0.9974249" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.41253644" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="IDEtalk Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25287357" sideWeight="0.49624866" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32980227" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32768363" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.116242036" sideWeight="0.6504237" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.116242036" sideWeight="0.83545196" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.34957626" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2405" sideWeight="0.6745868" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32980227" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32768363" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -842,16 +831,6 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/moving/Command.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="15" selection-start="1418" selection-end="1418" vertical-scroll-proportion="0.08869565" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/moving/CommandQueue.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="6" selection-start="1464" selection-end="1464" vertical-scroll-proportion="0.08869565" />
-      </provider>
-    </entry>
     <entry file="jar://C:/Program Files (x86)/Java/jdk1.7.0_04/src.zip!/java/io/File.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="1678" column="16" selection-start="71921" selection-end="71921" vertical-scroll-proportion="0.33333334" />
@@ -874,72 +853,76 @@
     </entry>
     <entry file="jar://C:/Program Files (x86)/Java/jdk1.7.0_04/src.zip!/java/nio/file/Path.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="159" column="9" selection-start="6335" selection-end="6346" vertical-scroll-proportion="0.014680483">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/Resource.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="45" column="37" selection-start="2838" selection-end="2838" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
+        <state line="159" column="9" selection-start="6335" selection-end="6346" vertical-scroll-proportion="0.014680483" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/UpdateType.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="45" selection-start="1456" selection-end="1456" vertical-scroll-proportion="0.0">
+        <state line="16" column="45" selection-start="1456" selection-end="1456" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="jar://C:/Program Files (x86)/scala/src/scala-library-src.jar!/scala/collection/TraversableLike.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="261" column="6" selection-start="10280" selection-end="10280" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="jar://C:/Program Files (x86)/scala/src/scala-library-src.jar!/scala/collection/mutable/MultiMap.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="27" column="6" selection-start="938" selection-end="984" vertical-scroll-proportion="0.25664988" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/Location.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="32" column="25" selection-start="1875" selection-end="1875" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/Resource.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="45" column="37" selection-start="2838" selection-end="2838" vertical-scroll-proportion="0.0" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tests/org/bleedingedge/monitoring/LocationMutator.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="15" column="35" selection-start="1448" selection-end="1448" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala">
+    <entry file="file://$PROJECT_DIR$/tests/org/bleedingedge/monitoring/MonitorLocationTest.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="35" column="79" selection-start="2158" selection-end="2158" vertical-scroll-proportion="0.0">
+        <state line="36" column="93" selection-start="1866" selection-end="1866" vertical-scroll-proportion="0.39637306">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateChangeEvent.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="2" selection-start="1789" selection-end="1789" vertical-scroll-proportion="0.27892917">
+        <state line="18" column="39" selection-start="1580" selection-end="1590" vertical-scroll-proportion="0.11744387">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationStateDelta.scala">
+    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/ImmutableLocationState.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="0" selection-start="1433" selection-end="1495" vertical-scroll-proportion="0.0">
-          <folding />
+        <state line="24" column="31" selection-start="1777" selection-end="1777" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#1363#1388#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/Location.scala">
+    <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/statechange/LocationState.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="32" column="25" selection-start="1875" selection-end="1875" vertical-scroll-proportion="0.0">
-          <folding />
+        <state line="42" column="8" selection-start="2330" selection-end="2330" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#1363#1456#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/bleedingedge/monitoring/LocationChangeQueue.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="67" selection-start="1930" selection-end="1930" vertical-scroll-proportion="0.3794643">
-          <folding>
-            <element signature="e#1351#1431#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tests/org/bleedingedge/monitoring/MonitorLocationTest.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="93" selection-start="1866" selection-end="1866" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tests/org/bleedingedge/monitoring/LocationMutator.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="35" selection-start="1448" selection-end="1448" vertical-scroll-proportion="0.11383928">
+        <state line="35" column="73" selection-start="2218" selection-end="2218" vertical-scroll-proportion="0.3523316">
           <folding />
         </state>
       </provider>

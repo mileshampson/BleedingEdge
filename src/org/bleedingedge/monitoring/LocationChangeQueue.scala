@@ -11,21 +11,29 @@
 
 package org.bleedingedge.monitoring
 
-import statechange.{LocationStateChangeEvent, LocationState, LocationStateDelta}
+import statechange.{LocationStateChangeEvent, LocationState}
 import collection.mutable.{Queue => mQueue}
 import java.nio.file.Path
 
 class LocationChangeQueue
 {
-  private val baseline = new LocationStateDelta()
-  var currentState = new LocationState()
+  private val baselineState = new LocationState()
+  private val currentState = new LocationState()
   val stateChangeQueue: mQueue[LocationStateChangeEvent] = new mQueue[LocationStateChangeEvent]()
 
+  /**
+   * Recalculate all the updates from baseline to the new state created by the specified path update. Need to
+   * recalculate all as some of the exiting events may have been cancelled out.
+   * @param updatedPath path with a change
+   */
   def processLocationUpdate(updatedPath: Path)
   {
     currentState.updateResourceAt(updatedPath)
-    stateChangeQueue ++= baseline.computeDeltaToState(currentState)
-    currentState = new LocationState()
+    val newEvents = baselineState.computeDeltaToState(currentState)
+    if (!newEvents.isEmpty)
+    {
+      stateChangeQueue ++= newEvents
+      // TODO notify change
+    }
   }
-
 }
