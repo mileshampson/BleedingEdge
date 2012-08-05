@@ -13,7 +13,10 @@ package org.bleedingedge.monitoring
 
 import java.nio.file.{Path, Files, Paths}
 import java.io.File
+import collection.mutable.{Queue => mQueue}
 import org.bleedingedge.monitoring.logging.LocalLogger
+import statechange.LocationStateChangeEvent
+import util.Random
 
 /**
  * Utility that manages and manipulates a file system location for test purposes.
@@ -25,16 +28,33 @@ class LocationMutator(val baseDirString: String)
   Files.createDirectories(basePath)
   LocalLogger.recordDebug("Test utility created dir at " + baseDirString)
 
-  def create(pathStrings: String*)
+  // Creates some random files and directories, returning the series of state change events representing these creations
+  def createRandom() : mQueue[LocationStateChangeEvent] =
   {
-     for (pathString <- pathStrings)
-     {
-       val fullPath = baseDirString + System.getProperty("file.separator") + pathString
-       val file = new File(fullPath)
-       file.getParentFile().mkdirs()
-       Files.createFile(Paths.get(fullPath))
-       LocalLogger.recordDebug("Test utility created file and dir at " + fullPath)
-     }
+    val events: mQueue[LocationStateChangeEvent] = new mQueue[LocationStateChangeEvent]()
+    for (i <- 0.until(Random.nextInt(20)))
+    {
+      val numDirs = if (Random.nextInt(5) > 1) 1 else (Random.nextInt(9) + 1)
+      val fullPath = baseDirString + Seq.fill(numDirs)(System.getProperty("file.separator") + Random.nextString(Random.nextInt(9)+1))
+      val file = new File(fullPath)
+      events.enqueue(if (file.isDirectory) createDir(file) else createFile(fullPath))
+    }
+    events
+  }
+
+  def createFile(fullPath: String) : LocationStateChangeEvent =
+  {
+    createDir(new File(fullPath).getParentFile())
+    val fullPathType = Paths.get(fullPath)
+    Files.createFile(fullPathType)
+    LocalLogger.recordDebug("Test utility created file and dir at " + fullPath)
+    new LocationStateChangeEvent(None, Some((new Resource(fullPathType), fullPathType)))
+  }
+
+  def createDir(fullPathFile: File) : LocationStateChangeEvent =
+  {
+    fullPathFile.mkdirs()
+    new LocationStateChangeEvent(None, None)
   }
 
   def delete(dirs: String*)

@@ -54,7 +54,6 @@ object MonitorLocationTest extends TestHarness
 
   def assertUpdateNumber(num: Int, failMsg: String, passMsg: String)
   {
-    // TODO We don't have a notify-on-change mechanism available to use yet, so poll the location for updates
     var numLoops = 0
     while(location.locationChanges.stateChangeQueue.length != num && numLoops < 5)
     {

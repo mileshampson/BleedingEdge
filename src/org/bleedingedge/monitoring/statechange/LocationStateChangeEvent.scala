@@ -20,7 +20,7 @@ class LocationStateChangeEvent(val oldResPath: Option[(Resource, Path)], val new
 
   if (oldResPath.isEmpty)
   {
-    eventType = UpdateType.CREATE
+    eventType = if(newResPath.isEmpty) UpdateType.NO_CHANGE else UpdateType.CREATE
   }
   else if (newResPath.isEmpty)
   {

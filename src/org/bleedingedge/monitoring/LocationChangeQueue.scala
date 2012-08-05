@@ -33,7 +33,6 @@ class LocationChangeQueue
     if (!newEvents.isEmpty)
     {
       stateChangeQueue ++= newEvents
-      // TODO notify change
     }
   }
 }
