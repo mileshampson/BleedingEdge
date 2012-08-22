@@ -52,4 +52,13 @@ class LocationStateChangeEvent(val oldResPath: Option[(Resource, Path)], val new
   else {
     eventType = UpdateType.NOT_RELATED
   }
+
+  override def equals(that: Any) = {
+    that match {
+      case r: LocationStateChangeEvent => r.oldResPath.equals(oldResPath) && r.newResPath.equals(newResPath)
+      case _ => false
+    }
+  }
+
+  override def toString = eventType.toString + "(" + oldResPath.map{ _._1} + "->" + newResPath.map{ _._1} + ")"
 }

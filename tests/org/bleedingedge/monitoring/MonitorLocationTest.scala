@@ -11,10 +11,13 @@
 
 package org.bleedingedge.monitoring
 
+import collection.mutable.{Queue => mQueue}
+import statechange.LocationStateChangeEvent
+
 object MonitorLocationTest extends TestHarness
 {
-  var mutator: LocationMutator = _
-  var location: Location = _
+  var mutator: org.bleedingedge.monitoring.LocationMutator = _
+  var location: org.bleedingedge.monitoring.Location = _
 
   def setUp()
   {
@@ -34,34 +37,26 @@ object MonitorLocationTest extends TestHarness
 
   def addRemoveTest()
   {
-    assertUpdateNumber(0, "The test directory has not been created", "Passed initial state test")
-
-    val fSep = System.getProperty("file.separator")
-    mutator.create("file1", "subDir" + fSep + "file2")
-    assertUpdateNumber(0, "Scanning has not started", "Passed pre-scan test")
+    val testQueue: mQueue[LocationStateChangeEvent] = mutator.createRandom()
+    assertChangeEventsMatch(new mQueue[LocationStateChangeEvent](), "Scanning has not started", "Passed pre-scan test")
 
     location.startChangeScanning()
-    assertUpdateNumber(2, "Scanning has started on a location containing files", "Passed initial scan test")
+    assertChangeEventsMatch(testQueue, "Not all creates were enqueued", "All creates enqueued")
 
-    mutator.create("subDir" + fSep + "file3")
-    assertUpdateNumber(3, "Another file was added to the scanned directory", "Passed added file in subdirectory test")
-
-    mutator.delete("subDir" + fSep + "file3")
-    assertUpdateNumber(4, "A file was deleted from the scanned directory", "Passed deleted file in subdirectory test")
-    mutator.delete("file1", "subDir" + fSep + "file2")
-    assertUpdateNumber(6, "A subdirectory and file have been deleted", "Passed deleted directory test")
+    // TODO modify and delete tests
   }
 
-  def assertUpdateNumber(num: Int, failMsg: String, passMsg: String)
+  def assertChangeEventsMatch(expected: mQueue[LocationStateChangeEvent], failMsg: String, passMsg: String)
   {
     var numLoops = 0
-    while(location.locationChanges.stateChangeQueue.length != num && numLoops < 5)
+    while(location.locationChanges.stateChangeQueue.length != expected.length && numLoops < 10)
     {
       numLoops+=1
       Thread.sleep(100)
     }
-    val additionalFailInfo = ". Expected " + num + " updates rather than " + location.locationChanges.stateChangeQueue.length + " updates."
-    val additionalPassInfo = ". There are " + num + " updates."
-    assertCondition(location.locationChanges.stateChangeQueue.length == num, failMsg + additionalFailInfo, passMsg + additionalPassInfo)
+    val actual = location.locationChanges.stateChangeQueue
+    val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
+    val additionalPassInfo = ". Expected [" + expected.mkString(",") + "] and got [" + actual.mkString(",") + "]."
+    assertCondition(actual.equals(expected), failMsg + additionalFailInfo, passMsg + additionalPassInfo)
   }
 }

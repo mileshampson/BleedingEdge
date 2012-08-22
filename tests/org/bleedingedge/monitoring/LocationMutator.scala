@@ -26,35 +26,33 @@ class LocationMutator(val baseDirString: String)
   val basePath = Paths.get(baseDirString)
   deleteAll()
   Files.createDirectories(basePath)
-  LocalLogger.recordDebug("Test utility created dir at " + baseDirString)
+  logDebug("created base directory at " + baseDirString)
 
-  // Creates some random files and directories, returning the series of state change events representing these creations
+  /**
+   * Creates a random number of files under the top level directory, and possibly some deeper directories and files.
+   * TODO create multiple files in subdirectories.
+   * @return A queue containing the state change events required to generate the end state of the test directory.
+   */
   def createRandom() : mQueue[LocationStateChangeEvent] =
   {
     val events: mQueue[LocationStateChangeEvent] = new mQueue[LocationStateChangeEvent]()
-    for (i <- 0.until(Random.nextInt(20)))
+    for (i <- 0.until(Random.nextInt(7)))
     {
-      val numDirs = if (Random.nextInt(5) > 1) 1 else (Random.nextInt(9) + 1)
-      val fullPath = baseDirString + Seq.fill(numDirs)(System.getProperty("file.separator") + Random.nextString(Random.nextInt(9)+1))
-      val file = new File(fullPath)
-      events.enqueue(if (file.isDirectory) createDir(file) else createFile(fullPath))
+      val numDirs = if (Random.nextInt(5) > 1) 1 else (Random.nextInt(5) + 1)
+      val fullPath = baseDirString + System.getProperty("file.separator") + Seq.fill(numDirs)(
+        java.lang.Long.toString(Random.nextLong(), 36).substring(1)).mkString(System.getProperty("file.separator"))
+      events.enqueue(createFile(fullPath))
     }
     events
   }
 
   def createFile(fullPath: String) : LocationStateChangeEvent =
   {
-    createDir(new File(fullPath).getParentFile())
+    new File(fullPath).getParentFile().mkdirs()
     val fullPathType = Paths.get(fullPath)
     Files.createFile(fullPathType)
-    LocalLogger.recordDebug("Test utility created file and dir at " + fullPath)
+    logDebug("created " + fullPath)
     new LocationStateChangeEvent(None, Some((new Resource(fullPathType), fullPathType)))
-  }
-
-  def createDir(fullPathFile: File) : LocationStateChangeEvent =
-  {
-    fullPathFile.mkdirs()
-    new LocationStateChangeEvent(None, None)
   }
 
   def delete(dirs: String*)
@@ -64,7 +62,6 @@ class LocationMutator(val baseDirString: String)
       val fullPath = baseDirString + System.getProperty("file.separator") + dir
       deletePath(Paths.get(fullPath))
     }
-
   }
 
   def deleteAll()
@@ -82,12 +79,12 @@ class LocationMutator(val baseDirString: String)
         val success = deletePath(new File(dir.toFile, children(i)).toPath)
         if (!success)
         {
-          LocalLogger.recordDebug("Test utility failed to delete directory at " + dir.toFile.getAbsolutePath)
+          logDebug("failed to delete directory at " + dir.toFile.getAbsolutePath)
           return false
         }
         else
         {
-          LocalLogger.recordDebug("Test utility deleted directory at " + dir.toFile.getAbsolutePath)
+          logDebug("deleted directory at " + dir.toFile.getAbsolutePath)
         }
       }
     }
@@ -95,17 +92,21 @@ class LocationMutator(val baseDirString: String)
     val exists = dir.toFile.exists()
     if (dir.toFile.delete())
     {
-      LocalLogger.recordDebug("Test utility deleted " + fileDirString + " at " + dir.toFile.getAbsolutePath)
+      logDebug("deleted " + fileDirString + " at " + dir.toFile.getAbsolutePath)
       return true
     }
     else
     {
       if (exists)
       {
-        LocalLogger.recordDebug("Test utility failed to delete " + fileDirString + " at " + dir.toFile.getAbsolutePath)
+        logDebug("failed to delete " + fileDirString + " at " + dir.toFile.getAbsolutePath)
       }
       return false
     }
   }
 
+  def logDebug(debug: String)
+  {
+    LocalLogger.recordDebug("Test file generator - " + debug)
+  }
 }

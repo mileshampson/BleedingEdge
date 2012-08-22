@@ -30,12 +30,12 @@ final class Resource(path : Path)
   // A slight optimisation to comparison time, at the expense of having to transmit more information,
   // is to also store file length to avoid comparing long hash strings for unequally sized files
   val fileLength = path.toFile.length()
-  LocalLogger.recordDebug("Hash for " + path + " is " + resourceHash)
+  LocalLogger.recordDebug("Created resource - path " + path + " hashed as " + resourceHash)
 
-  // Equal Resources always return true, but there is also an exceedingly small
-  // chance of the md5 hash of the bytes of two different files also being equal.
-  // This does not violate the equals contract, but means it is theoretically
-  // possible that a file change may be missed at some point.
+  // Equal Resources always return true, but there is also an exceedingly small (around
+  // k^2/(6.8*10^38) percent for k resources with our hash function) chance of the md5 hash
+  // of the bytes of two different files also being equal. This does not violate the equals
+  // contract, but means it is theoretically possible that a file change may be missed at some point.
   override def equals(that: Any) = {
     that match {
       case r: Resource => r.fileLength == fileLength && r.resourceHash.equals(resourceHash)
@@ -48,6 +48,8 @@ final class Resource(path : Path)
   // of different Resources having the same hash will be a small performance penalty on
   // the lookup of those Resources in hash based data structures holding them.
   override def hashCode = resourceHash.hashCode
+
+  override def toString = resourceHash
 }
 
 

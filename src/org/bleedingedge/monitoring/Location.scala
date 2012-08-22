@@ -23,6 +23,8 @@ class Location(path : Path) {
 
   updateResourcesAt(path)
 
+  // TODO At the moment is called multiple times for the same file due to the java FSW implementation, this is
+  // inefficient but functionally not a problem as this does not change the internal state of LocationState
   def updateResourcesAt(location : Path)
   {
     location.toFile.isFile match {
@@ -38,7 +40,7 @@ class Location(path : Path) {
 
     override def preVisitDirectory(dirPath:Path, att:BasicFileAttributes):FileVisitResult  =
     {
-      LocalLogger.recordDebug("Watching directory " + dirPath + " for changes")
+      LocalLogger.recordDebug("Notified of directory - now watching " + dirPath + " for changes")
       watchKeys.put(dirPath.register(watcher, StandardWatchEventKinds.ENTRY_CREATE,
         StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), dirPath)
       FileVisitResult.CONTINUE
@@ -59,29 +61,26 @@ class Location(path : Path) {
   def scanChanges():Object =
   {
     LocalLogger.recordDebug("Starting change scanning")
-    // TODO status code loop condition, or The Little Turing Machine That Could (halt)
+    // TODO The Little Turing Machine That Could (halt)
     while (true)
     {
       val key = ResourceVisitor.watcher.take()
-      LocalLogger.recordDebug("Notifed of change")
       val it = key.pollEvents().iterator
       while (it.hasNext())
       {
         val event = it.next()
         val kind = event.kind()
-        // TODO Do some pattern matching rather than this java type system fail crud
-        val path = ResourceVisitor.watchKeys.get(key).get.resolve(
-          event.asInstanceOf[WatchEvent[Path]].context())
-        LocalLogger.recordDebug("Received change at " + path)
+        // TODO could do pattern patching on kind here
+        val path = ResourceVisitor.watchKeys.get(key).get.resolve(event.asInstanceOf[WatchEvent[Path]].context())
+        LocalLogger.recordDebug("Notified of update - something has changed at " + path)
         updateResourcesAt(path)
       }
       if (!key.reset())
       {
-        LocalLogger.recordDebug("Stopped watching directory " + path + " for changes")
+        LocalLogger.recordDebug("Notified of removal - stop scanning " + path + " for changes")
         ResourceVisitor.watchKeys.remove(key)
       }
     }
     ResourceVisitor.watchKeys
-    // TODO rewrite the above code. All of it. Every last line.
   }
 }

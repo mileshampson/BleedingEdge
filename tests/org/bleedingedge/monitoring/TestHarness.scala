@@ -20,14 +20,14 @@ abstract class TestHarness extends App
     setUp()
     runTests()
     tearDown()
-    LocalLogger.recordDebug("All tests passed! Exiting test harness")
+    LocalLogger.recordDebug("TestHarness - All tests passed! Exiting test harness")
   }
   catch
   {
     case assertionEr: AssertionError =>
     {
       LocalLogger.recordDebug(assertionEr.toString)
-      LocalLogger.recordDebug("A test failed! Exiting test harness")
+      LocalLogger.recordDebug("TestHarness - A test failed! Exiting test harness")
       tearDown()
     }
   }

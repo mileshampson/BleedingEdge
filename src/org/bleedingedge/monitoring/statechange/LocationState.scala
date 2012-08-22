@@ -14,14 +14,15 @@ package org.bleedingedge.monitoring.statechange
 import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, Queue => mQueue}
 import java.nio.file.Path
 import org.bleedingedge.monitoring.Resource
+import org.bleedingedge.monitoring.logging.LocalLogger
 
 /**
  * The resources that exist in a location at the current time
  */
-class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]])
+class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path])
 {
   def this(other: LocationState) = {
-    this(other.resources.clone())
+    this(other.resources.clone().asInstanceOf[mMMap[Resource, Path]])
   }
 
   def updateResourceAt(path : Path)
@@ -50,6 +51,7 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
     val eventQueue = new mQueue[LocationStateChangeEvent]
     val oldResources = getExistingResources()
     val newResources = newState.getExistingResources()
+    LocalLogger.recordDebug("Computing delta from [" + oldResources.mkString(",") + "] to [" + newResources.mkString(",") + "]")
     // Pair each old resource against a new resource to generate an event.
     while (!oldResources.isEmpty)
     {
@@ -60,6 +62,7 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
       if (eventCandidate.isDefined) newResources.dequeueFirst(newResource => newResource.equals(eventCandidate.get))
     }
     // Add all create events
+    // TODO at the moment this is double counting creates, check event equality
     while (!newResources.isEmpty)
     {
       val (newResource, newPath) = newResources.dequeue()
