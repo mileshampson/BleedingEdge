@@ -12,6 +12,7 @@
       <root url="jar://C:/Program Files (x86)/scala/src/scala-library-src.jar!/" />
       <root url="jar://C:/Program Files (x86)/scala/src/scala-swing-src.jar!/" />
       <root url="jar://C:/Program Files (x86)/scala/src/scala-dbc-src.jar!/" />
+      <root url="jar://C:/Program Files (x86)/scala/src/scala-compiler-src.jar!/" />
     </SOURCES>
   </library>
 </component>

@@ -60,5 +60,9 @@ class LocationStateChangeEvent(val oldResPath: Option[(Resource, Path)], val new
     }
   }
 
-  override def toString = eventType.toString + "(" + oldResPath.map{ _._1} + "->" + newResPath.map{ _._1} + ")"
+  override def hashCode = oldResPath.map{ _._1}.hashCode() + oldResPath.map{ _._2}.hashCode() +
+                          newResPath.map{ _._1}.hashCode() + newResPath.map{ _._2}.hashCode()
+
+  override def toString = eventType.toString + "(" + oldResPath.map{ _._1} + "@" + oldResPath.map{ _._2} + "->" +
+                                                     newResPath.map{ _._1} + "@" + newResPath.map{ _._2} + ")"
 }

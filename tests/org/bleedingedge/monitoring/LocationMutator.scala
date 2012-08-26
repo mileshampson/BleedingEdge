@@ -13,7 +13,7 @@ package org.bleedingedge.monitoring
 
 import java.nio.file.{Path, Files, Paths}
 import java.io.File
-import collection.mutable.{Queue => mQueue}
+import collection.mutable.{HashSet => mHSet}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import statechange.LocationStateChangeEvent
 import util.Random
@@ -33,15 +33,15 @@ class LocationMutator(val baseDirString: String)
    * TODO create multiple files in subdirectories.
    * @return A queue containing the state change events required to generate the end state of the test directory.
    */
-  def createRandom() : mQueue[LocationStateChangeEvent] =
+  def createRandom() : mHSet[LocationStateChangeEvent] =
   {
-    val events: mQueue[LocationStateChangeEvent] = new mQueue[LocationStateChangeEvent]()
-    for (i <- 0.until(Random.nextInt(7)))
+    val events: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()
+    for (i <- 0.until(Random.nextInt(5)+1))
     {
       val numDirs = if (Random.nextInt(5) > 1) 1 else (Random.nextInt(5) + 1)
       val fullPath = baseDirString + System.getProperty("file.separator") + Seq.fill(numDirs)(
         java.lang.Long.toString(Random.nextLong(), 36).substring(1)).mkString(System.getProperty("file.separator"))
-      events.enqueue(createFile(fullPath))
+      events.add(createFile(fullPath))
     }
     events
   }
@@ -51,8 +51,9 @@ class LocationMutator(val baseDirString: String)
     new File(fullPath).getParentFile().mkdirs()
     val fullPathType = Paths.get(fullPath)
     Files.createFile(fullPathType)
-    logDebug("created " + fullPath)
-    new LocationStateChangeEvent(None, Some((new Resource(fullPathType), fullPathType)))
+    val res = new Resource(fullPathType)
+    logDebug("created " + res + " at " + fullPath)
+    new LocationStateChangeEvent(None, Some((res, fullPathType)))
   }
 
   def delete(dirs: String*)

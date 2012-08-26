@@ -12,14 +12,14 @@
 package org.bleedingedge.monitoring
 
 import statechange.{LocationStateChangeEvent, LocationState}
-import collection.mutable.{Queue => mQueue}
+import collection.mutable.{HashSet => mHSet}
 import java.nio.file.Path
 
 class LocationChangeQueue
 {
   private val baselineState = new LocationState()
   private val currentState = new LocationState()
-  val stateChangeQueue: mQueue[LocationStateChangeEvent] = new mQueue[LocationStateChangeEvent]()
+  var stateChangeQueue: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()
 
   /**
    * Recalculate all the updates from baseline to the new state created by the specified path update. Need to
@@ -29,10 +29,6 @@ class LocationChangeQueue
   def processLocationUpdate(updatedPath: Path)
   {
     currentState.updateResourceAt(updatedPath)
-    val newEvents = baselineState.computeDeltaToState(currentState)
-    if (!newEvents.isEmpty)
-    {
-      stateChangeQueue ++= newEvents
-    }
+    stateChangeQueue = baselineState.computeDeltaToState(currentState)
   }
 }

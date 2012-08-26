@@ -12,8 +12,6 @@
 package org.bleedingedge.monitoring
 
 import java.nio.file._
-import java.util.Arrays
-import org.bleedingedge.monitoring.logging.LocalLogger
 import java.security.MessageDigest
 import java.math.BigInteger
 
@@ -30,7 +28,6 @@ final class Resource(path : Path)
   // A slight optimisation to comparison time, at the expense of having to transmit more information,
   // is to also store file length to avoid comparing long hash strings for unequally sized files
   val fileLength = path.toFile.length()
-  LocalLogger.recordDebug("Created resource - path " + path + " hashed as " + resourceHash)
 
   // Equal Resources always return true, but there is also an exceedingly small (around
   // k^2/(6.8*10^38) percent for k resources with our hash function) chance of the md5 hash

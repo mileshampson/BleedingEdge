@@ -11,7 +11,7 @@
 
 package org.bleedingedge.monitoring
 
-import collection.mutable.{Queue => mQueue}
+import collection.mutable.{HashSet => mHSet}
 import statechange.LocationStateChangeEvent
 
 object MonitorLocationTest extends TestHarness
@@ -37,26 +37,26 @@ object MonitorLocationTest extends TestHarness
 
   def addRemoveTest()
   {
-    val testQueue: mQueue[LocationStateChangeEvent] = mutator.createRandom()
-    assertChangeEventsMatch(new mQueue[LocationStateChangeEvent](), "Scanning has not started", "Passed pre-scan test")
+    val createdSet: mHSet[LocationStateChangeEvent] = mutator.createRandom()
+    assertChangeEventsMatch(new mHSet[LocationStateChangeEvent](), "Scanning has not started", "Passed pre-scan test")
 
     location.startChangeScanning()
-    assertChangeEventsMatch(testQueue, "Not all creates were enqueued", "All creates enqueued")
+    assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
     // TODO modify and delete tests
   }
 
-  def assertChangeEventsMatch(expected: mQueue[LocationStateChangeEvent], failMsg: String, passMsg: String)
+  def assertChangeEventsMatch(expected: mHSet[LocationStateChangeEvent], failMsg: String, passMsg: String)
   {
     var numLoops = 0
-    while(location.locationChanges.stateChangeQueue.length != expected.length && numLoops < 10)
+    while(location.locationChanges.stateChangeQueue.size != expected.size && numLoops < 10)
     {
       numLoops+=1
       Thread.sleep(100)
     }
-    val actual = location.locationChanges.stateChangeQueue
+    val actual: mHSet[LocationStateChangeEvent] = location.locationChanges.stateChangeQueue
     val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
-    val additionalPassInfo = ". Expected [" + expected.mkString(",") + "] and got [" + actual.mkString(",") + "]."
+    val additionalPassInfo = " with expected result [" + actual.mkString(",") + "]."
     assertCondition(actual.equals(expected), failMsg + additionalFailInfo, passMsg + additionalPassInfo)
   }
 }

@@ -13,10 +13,8 @@ package org.bleedingedge.monitoring
 
 import java.nio.file._
 import attribute.BasicFileAttributes
-import logging.LocalLogger
 import scala.collection.mutable.{HashMap => mHMap}
 import scheduling.ThreadPool
-import statechange.LocationState
 
 class Location(path : Path) {
   val locationChanges = new LocationChangeQueue()
@@ -40,7 +38,6 @@ class Location(path : Path) {
 
     override def preVisitDirectory(dirPath:Path, att:BasicFileAttributes):FileVisitResult  =
     {
-      LocalLogger.recordDebug("Notified of directory - now watching " + dirPath + " for changes")
       watchKeys.put(dirPath.register(watcher, StandardWatchEventKinds.ENTRY_CREATE,
         StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), dirPath)
       FileVisitResult.CONTINUE
@@ -60,7 +57,6 @@ class Location(path : Path) {
 
   def scanChanges():Object =
   {
-    LocalLogger.recordDebug("Starting change scanning")
     // TODO The Little Turing Machine That Could (halt)
     while (true)
     {
@@ -72,12 +68,10 @@ class Location(path : Path) {
         val kind = event.kind()
         // TODO could do pattern patching on kind here
         val path = ResourceVisitor.watchKeys.get(key).get.resolve(event.asInstanceOf[WatchEvent[Path]].context())
-        LocalLogger.recordDebug("Notified of update - something has changed at " + path)
         updateResourcesAt(path)
       }
       if (!key.reset())
       {
-        LocalLogger.recordDebug("Notified of removal - stop scanning " + path + " for changes")
         ResourceVisitor.watchKeys.remove(key)
       }
     }
