@@ -43,7 +43,10 @@ object MonitorLocationTest extends TestHarness
     location.startChangeScanning()
     assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
-    // TODO modify and delete tests
+    val changedSet: mHSet[LocationStateChangeEvent] = mutator.modifySomeExistingFiles()
+    assertChangeEventsMatch(createdSet++changedSet, "Not all modifies were enqueued", "All modifies enqueued")
+    // TODO test delete
+    // TODO test create+modiy, which depends on create happening before modify
   }
 
   def assertChangeEventsMatch(expected: mHSet[LocationStateChangeEvent], failMsg: String, passMsg: String)

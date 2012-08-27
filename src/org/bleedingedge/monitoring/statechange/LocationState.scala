@@ -52,7 +52,9 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
     val eventQueue = new mHSet[LocationStateChangeEvent]
     val oldResources = getExistingResources()
     val newResources = newState.getExistingResources()
+    val debugString = "Delta from " + oldResources + " to " + newResources
     // Pair each old resource against a new resource to generate an event.
+    // TODO a modify is being picked up as a create
     while (!oldResources.isEmpty)
     {
       val (oldResource, oldPath) = oldResources.dequeue()
@@ -67,6 +69,7 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
       val (newResource, newPath) = newResources.dequeue()
       eventQueue.add(new LocationStateChangeEvent(None, Option(newResource, newPath)))
     }
+    LocalLogger.recordDebug(debugString + " was " + eventQueue)
     // All event candidates get added so we need to filter out the NOPs.
     eventQueue.filterNot(event => event.eventType == UpdateType.NO_CHANGE)
   }
