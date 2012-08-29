@@ -13,11 +13,12 @@ package org.bleedingedge.monitoring
 
 import java.nio.file._
 import attribute.BasicFileAttributes
-import scala.collection.mutable.{HashMap => mHMap}
+import collection.mutable.{HashMap => mHMap, HashSet => mHSet}
 import scheduling.ThreadPool
+import statechange.LocationStateChangeEvent
 
 class Location(path : Path) {
-  val locationChanges = new LocationChangeQueue()
+  var locationChanges = new LocationChangeQueue()
 
   updateResourcesAt(path)
 
@@ -76,5 +77,13 @@ class Location(path : Path) {
       }
     }
     ResourceVisitor.watchKeys
+  }
+
+  def dequeueChanges(): mHSet[LocationStateChangeEvent] =
+  {
+    val changesUntilNow = locationChanges.stateChangeQueue
+    // Reset the changed state to the current state
+    locationChanges = new LocationChangeQueue(locationChanges.currentState)
+    changesUntilNow
   }
 }

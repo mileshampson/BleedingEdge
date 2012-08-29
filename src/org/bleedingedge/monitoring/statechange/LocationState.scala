@@ -46,6 +46,8 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
    * Provides a set of events that transform the current location state into the specified location state.
    * @param newState to calculate transform to.
    * @return an unordered set of events that will carry out the requested transform.
+   *         TODO switch from set to queue for quicker dependent events, i.e. MOVE then UPDATE is more efficient than
+   *         TODO DELETE then CREATE, and also to avoid having to scan for operations to run first. Test with .toSet
    */
   def computeDeltaToState(newState: LocationState): mHSet[LocationStateChangeEvent] =
   {
@@ -54,7 +56,6 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
     val newResources = newState.getExistingResources()
     val debugString = "Delta from " + oldResources + " to " + newResources
     // Pair each old resource against a new resource to generate an event.
-    // TODO a modify is being picked up as a create
     while (!oldResources.isEmpty)
     {
       val (oldResource, oldPath) = oldResources.dequeue()

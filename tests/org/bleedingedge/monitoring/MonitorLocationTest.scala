@@ -32,10 +32,10 @@ object MonitorLocationTest extends TestHarness
 
   def runTests()
   {
-    addRemoveTest()
+    singleOperationTypeTests()
   }
 
-  def addRemoveTest()
+  def singleOperationTypeTests()
   {
     val createdSet: mHSet[LocationStateChangeEvent] = mutator.createRandom()
     assertChangeEventsMatch(new mHSet[LocationStateChangeEvent](), "Scanning has not started", "Passed pre-scan test")
@@ -43,10 +43,16 @@ object MonitorLocationTest extends TestHarness
     location.startChangeScanning()
     assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
+    // TODO delete (so also move) are failing due to not receiving an event to trigger a delta from something to nothing
     val changedSet: mHSet[LocationStateChangeEvent] = mutator.modifySomeExistingFiles()
-    assertChangeEventsMatch(createdSet++changedSet, "Not all modifies were enqueued", "All modifies enqueued")
-    // TODO test delete
-    // TODO test create+modiy, which depends on create happening before modify
+    assertChangeEventsMatch(changedSet, "Not all modifies were enqueued", "All modifies enqueued")
+
+    val deletedSet: mHSet[LocationStateChangeEvent] = mutator.deleteAll()
+    assertChangeEventsMatch(deletedSet, "Not all deletes were enqueued", "All deletes enqueued")
+  }
+
+  def combinedOperationTests()
+  {
   }
 
   def assertChangeEventsMatch(expected: mHSet[LocationStateChangeEvent], failMsg: String, passMsg: String)
@@ -57,7 +63,7 @@ object MonitorLocationTest extends TestHarness
       numLoops+=1
       Thread.sleep(100)
     }
-    val actual: mHSet[LocationStateChangeEvent] = location.locationChanges.stateChangeQueue
+    val actual: mHSet[LocationStateChangeEvent] = location.dequeueChanges()
     val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
     val additionalPassInfo = " with expected result [" + actual.mkString(",") + "]."
     assertCondition(actual.equals(expected), failMsg + additionalFailInfo, passMsg + additionalPassInfo)

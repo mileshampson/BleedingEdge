@@ -15,15 +15,15 @@ import statechange.{LocationStateChangeEvent, LocationState}
 import collection.mutable.{HashSet => mHSet}
 import java.nio.file.Path
 
-class LocationChangeQueue
+class LocationChangeQueue(baselineState: LocationState = new LocationState())
 {
-  private val baselineState = new LocationState()
-  private val currentState = new LocationState()
+  val currentState = new LocationState()
   var stateChangeQueue: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()
 
   /**
-   * Recalculate all the updates from baseline to the new state created by the specified path update. Need to
-   * recalculate all as some of the exiting events may have been cancelled out.
+   * Recalculate all the updates from baseline to the new state created by the specified path update. Recalculate from
+   * baseline to current, rather than incrementally, to pick up events that are later cancelled out.
+   *
    * @param updatedPath path with a change
    */
   def processLocationUpdate(updatedPath: Path)

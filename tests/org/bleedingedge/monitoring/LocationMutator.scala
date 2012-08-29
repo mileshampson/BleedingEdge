@@ -49,14 +49,14 @@ class LocationMutator(val baseDirString: String)
     events
   }
 
-  def createFile(fullPath: String) : LocationStateChangeEvent =
+  def createFile(fullPathString: String) : LocationStateChangeEvent =
   {
-    new File(fullPath).getParentFile().mkdirs()
-    val fullPathType = Paths.get(fullPath)
-    Files.createFile(fullPathType)
-    val res = new Resource(fullPathType)
-    logDebug("created " + res + " at " + fullPath)
-    new LocationStateChangeEvent(None, Some((res, fullPathType)))
+    new File(fullPathString).getParentFile().mkdirs()
+    val fullPath = Paths.get(fullPathString)
+    Files.createFile(fullPath)
+    val res = new Resource(fullPath)
+    logDebug("created " + res + " at " + fullPathString)
+    new LocationStateChangeEvent(None, Some((res, fullPath)))
   }
 
   def modifySomeExistingFiles() : mHSet[LocationStateChangeEvent] =
@@ -121,54 +121,43 @@ class LocationMutator(val baseDirString: String)
     events
   }
 
-  def delete(dirs: String*)
+  def deleteAll(): mHSet[LocationStateChangeEvent] =
   {
-    for (dir <- dirs)
-    {
-      val fullPath = baseDirString + System.getProperty("file.separator") + dir
-      deletePath(Paths.get(fullPath))
-    }
+    val events = new mHSet[LocationStateChangeEvent]()
+    deletePath(basePath, events)
+    events
   }
 
-  def deleteAll()
-  {
-    deletePath(basePath)
-  }
-
-  private def deletePath(dir: Path) : Boolean =
+  private def deletePath(dir: Path, events: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()): Boolean =
   {
     if (Files.isDirectory(dir))
     {
       val children = dir.toFile.list()
       for (i <- 0 until children.length)
       {
-        val success = deletePath(new File(dir.toFile, children(i)).toPath)
-        if (!success)
-        {
-          logDebug("failed to delete directory at " + dir.toFile.getAbsolutePath)
-          return false
-        }
-        else
+        if (deletePath(new File(dir.toFile, children(i)).toPath, events))
         {
           logDebug("deleted directory at " + dir.toFile.getAbsolutePath)
         }
+        else
+        {
+          logDebug("failed to delete directory at " + dir.toFile.getAbsolutePath)
+        }
       }
+      true
     }
-    val fileDirString = if(dir.toFile.isDirectory) "directory" else "file"
-    val exists = dir.toFile.exists()
-    if (dir.toFile.delete())
+    else if (dir.toFile.exists())
     {
-      logDebug("deleted " + fileDirString + " at " + dir.toFile.getAbsolutePath)
-      return true
-    }
-    else
-    {
-      if (exists)
+      val potentialEvent = new LocationStateChangeEvent(Some((new Resource(dir), dir)), None)
+      if (dir.toFile.delete())
       {
-        logDebug("failed to delete " + fileDirString + " at " + dir.toFile.getAbsolutePath)
+        events.add(potentialEvent)
+        logDebug("deleted file at " + dir.toFile.getAbsolutePath)
+        true
       }
-      return false
+      logDebug("failed to delete file at " + dir.toFile.getAbsolutePath)
     }
+    false
   }
 
   def logDebug(debug: String)
