@@ -43,6 +43,7 @@ object MonitorLocationTest extends TestHarness
     assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
     // TODO delete (so also move) are failing due to not receiving an event to trigger a delta from something to nothing
+    // TODO look at whether we just get one file system event for the activity
     val changedSet: Seq[LocationStateChangeEvent] = mutator.modifySomeExistingFiles()
     assertChangeEventsMatch(changedSet, "Not all modifies were enqueued", "All modifies enqueued")
 

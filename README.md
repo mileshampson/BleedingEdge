@@ -16,6 +16,7 @@ Layers
 processing each. Functions are provided by the other layers and are either 
 mapping outgoing filesystem changes towards bytes, or reducing incoming 
 bytes towards filesystem changes.
+* Defines a logging monad.
 
 **1 - Application. Provides an API.**
 * Processes user specification of locations where file system events can 
@@ -28,10 +29,10 @@ that change at that location.
 the filesystem.
 
 **3 - Transposition. Shifts data between change events and resources.** 
-* A function taking two sets of resources and outputting a queue of
-events for each add, delete, move or update between the two.
-* A function taking a queue of move events and a set of resources, which 
-applies the changes to the resources and outputs them.
+* A function taking two sets of resources and outputting a queue of the add, 
+delete, move or update events containing the rdiff byte changes between them.
+* A function taking a queue of byte change events and a set of resources, 
+which applies the changes to the resources and outputs them.
 
 **4 - Codec. Translates between change events (specifying byte 
 differences between abstract locations) and transmissible data sequences.**

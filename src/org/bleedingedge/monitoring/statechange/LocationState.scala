@@ -49,8 +49,8 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
     val newResources = newState.getExistingResources()
     val debugString = "Delta from " + oldResources + " to " + newResources
     // Fill with nulls to make length equal and pair each old resource against a new resource to generate an event.
-    val pairs = oldResources.padTo(newResources.size, null) zip newResources.padTo(oldResources.size, null)
-    val eventQueue :Seq[LocationStateChangeEvent] = pairs.map(eventPair =>
+    val eventQueue :Seq[LocationStateChangeEvent] =
+      (oldResources.padTo(newResources.size, null) zip newResources.padTo(oldResources.size, null)).map(eventPair =>
       new LocationStateChangeEvent(Option(eventPair._1), Option(eventPair._2)))
       .filterNot(event => event.eventType == UpdateType.NO_CHANGE)
     LocalLogger.recordDebug(debugString + " was " + eventQueue)
