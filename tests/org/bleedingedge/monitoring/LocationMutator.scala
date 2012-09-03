@@ -13,10 +13,10 @@ package org.bleedingedge.monitoring
 
 import java.nio.file.{StandardCopyOption, Path, Files, Paths}
 import java.io.{FileWriter, BufferedWriter, File}
-import collection.mutable.{HashSet => mHSet}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import statechange.LocationStateChangeEvent
 import util.Random
+import collection.mutable
 
 /**
  * Utility that manages and manipulates a file system location for test purposes.
@@ -36,15 +36,15 @@ class LocationMutator(val baseDirString: String)
    * TODO create multiple files in subdirectories.
    * @return A queue containing the state change events required to generate the end state of the test directory.
    */
-  def createRandom() : mHSet[LocationStateChangeEvent] =
+  def createRandom() : Seq[LocationStateChangeEvent] =
   {
-    val events: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()
+    var events: Seq[LocationStateChangeEvent] = Seq.empty
     for (i <- 0.until(rand.nextInt(5)+1))
     {
       val numDirs = if (rand.nextInt(5) > 1) 1 else (rand.nextInt(5) + 1)
       val fullPath = baseDirString + System.getProperty("file.separator") + Seq.fill(numDirs)(
         java.lang.Long.toString(rand.nextLong(), 36).substring(1)).mkString(System.getProperty("file.separator"))
-      events.add(createFile(fullPath))
+      events = events :+ createFile(fullPath)
     }
     events
   }
@@ -59,14 +59,14 @@ class LocationMutator(val baseDirString: String)
     new LocationStateChangeEvent(None, Some((res, fullPath)))
   }
 
-  def modifySomeExistingFiles() : mHSet[LocationStateChangeEvent] =
+  def modifySomeExistingFiles() : Seq[LocationStateChangeEvent] =
   {
     modifySomeExistingFiles(new File(baseDirString))
   }
 
-  def modifySomeExistingFiles(toModify: File) : mHSet[LocationStateChangeEvent] =
+  def modifySomeExistingFiles(toModify: File) : Seq[LocationStateChangeEvent] =
   {
-    val events: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()
+    var events: Seq[LocationStateChangeEvent] = Seq.empty
     toModify.listFiles().foreach(file =>
       if (file.isDirectory()) {
         events ++= modifySomeExistingFiles(file)
@@ -86,7 +86,7 @@ class LocationMutator(val baseDirString: String)
             out.close()
             val newRes = new Resource(fullPathType)
             logDebug("modified " + oldRes + " to " + newRes + " at " + fullPath)
-            events.add(new LocationStateChangeEvent(Some((oldRes, fullPathType)), Some((newRes, fullPathType))))
+            events = events :+ new LocationStateChangeEvent(Some((oldRes, fullPathType)), Some((newRes, fullPathType)))
           }
           // else a move
           else
@@ -114,21 +114,21 @@ class LocationMutator(val baseDirString: String)
             val newPath = Paths.get(newFileName)
             Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
             val newRes = new Resource(newPath)
-            events.add(new LocationStateChangeEvent(Some((oldRes, oldPath)), Some((newRes, newPath))))
+            events = events :+ new LocationStateChangeEvent(Some((oldRes, oldPath)), Some((newRes, newPath)))
           }
         }
       })
     events
   }
 
-  def deleteAll(): mHSet[LocationStateChangeEvent] =
+  def deleteAll(): Seq[LocationStateChangeEvent] =
   {
-    val events = new mHSet[LocationStateChangeEvent]()
+    val events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue
     deletePath(basePath, events)
     events
   }
 
-  private def deletePath(dir: Path, events: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()): Boolean =
+  private def deletePath(dir: Path, events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue): Boolean =
   {
     if (Files.isDirectory(dir))
     {
@@ -151,7 +151,7 @@ class LocationMutator(val baseDirString: String)
       val potentialEvent = new LocationStateChangeEvent(Some((new Resource(dir), dir)), None)
       if (dir.toFile.delete())
       {
-        events.add(potentialEvent)
+        events.enqueue(potentialEvent)
         logDebug("deleted file at " + dir.toFile.getAbsolutePath)
         true
       }

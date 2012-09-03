@@ -11,7 +11,7 @@
 
 package org.bleedingedge.monitoring.statechange
 
-import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, Queue => mQueue, HashSet => mHSet}
+import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet}
 import java.nio.file.Path
 import org.bleedingedge.monitoring.Resource
 import org.bleedingedge.monitoring.logging.LocalLogger
@@ -35,43 +35,25 @@ class LocationState(val resources: mMMap[Resource, Path] = new mHMap[Resource, m
   /**
    *  The stored resources that currently exist on the filesystem.
    */
-  def getExistingResources(): mQueue[(Resource, Path)] =
-  {
-    //TODO check if we need to switch to immutable data structures or do defensive copies here
-    mQueue[(Resource, Path)]() ++=
-      resources.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten
-  }
+  def getExistingResources(): Seq[(Resource, Path)] =
+    resources.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
 
   /**
-   * Provides a set of events that transform the current location state into the specified location state.
+   * Provides a sequence of events that transform the current location state into the specified location state.
    * @param newState to calculate transform to.
-   * @return an unordered set of events that will carry out the requested transform.
-   *         TODO switch from set to queue for quicker dependent events, i.e. MOVE then UPDATE is more efficient than
-   *         TODO DELETE then CREATE, and also to avoid having to scan for operations to run first. Test with .toSet
+   * @return an immutable sequence of events that will carry out the requested transform.
    */
-  def computeDeltaToState(newState: LocationState): mHSet[LocationStateChangeEvent] =
+  def computeDeltaToState(newState: LocationState): Seq[LocationStateChangeEvent] =
   {
-    val eventQueue = new mHSet[LocationStateChangeEvent]
     val oldResources = getExistingResources()
     val newResources = newState.getExistingResources()
     val debugString = "Delta from " + oldResources + " to " + newResources
-    // Pair each old resource against a new resource to generate an event.
-    while (!oldResources.isEmpty)
-    {
-      val (oldResource, oldPath) = oldResources.dequeue()
-      val eventCandidate:Option[(Resource, Path)] = newResources.find(newResource => new LocationStateChangeEvent(
-        Option(oldResource, oldPath), Option(newResource._1, newResource._2)).eventType != UpdateType.NOT_RELATED)
-      eventQueue.add(new LocationStateChangeEvent(Option(oldResource, oldPath), eventCandidate))
-      if (eventCandidate.isDefined) newResources.dequeueFirst(newResource => newResource.equals(eventCandidate.get))
-    }
-    // Add all create events
-    while (!newResources.isEmpty)
-    {
-      val (newResource, newPath) = newResources.dequeue()
-      eventQueue.add(new LocationStateChangeEvent(None, Option(newResource, newPath)))
-    }
+    // Fill with nulls to make length equal and pair each old resource against a new resource to generate an event.
+    val pairs = oldResources.padTo(newResources.size, null) zip newResources.padTo(oldResources.size, null)
+    val eventQueue :Seq[LocationStateChangeEvent] = pairs.map(eventPair =>
+      new LocationStateChangeEvent(Option(eventPair._1), Option(eventPair._2)))
+      .filterNot(event => event.eventType == UpdateType.NO_CHANGE)
     LocalLogger.recordDebug(debugString + " was " + eventQueue)
-    // All event candidates get added so we need to filter out the NOPs.
-    eventQueue.filterNot(event => event.eventType == UpdateType.NO_CHANGE)
+    eventQueue
   }
 }

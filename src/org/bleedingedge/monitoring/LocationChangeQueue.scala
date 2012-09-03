@@ -12,13 +12,12 @@
 package org.bleedingedge.monitoring
 
 import statechange.{LocationStateChangeEvent, LocationState}
-import collection.mutable.{HashSet => mHSet}
 import java.nio.file.Path
 
 class LocationChangeQueue(baselineState: LocationState = new LocationState())
 {
   val currentState = new LocationState()
-  var stateChangeQueue: mHSet[LocationStateChangeEvent] = new mHSet[LocationStateChangeEvent]()
+  var stateChangeQueue: Seq[LocationStateChangeEvent] = Seq.empty
 
   /**
    * Recalculate all the updates from baseline to the new state created by the specified path update. Recalculate from
