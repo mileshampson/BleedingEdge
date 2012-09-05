@@ -11,8 +11,8 @@
 
 package org.bleedingedge.monitoring
 
-import java.nio.file.{StandardCopyOption, Path, Files, Paths}
-import java.io.{FileWriter, BufferedWriter, File}
+import java.nio.file.{StandardCopyOption, Files, Paths}
+import java.io.{File, FileWriter, BufferedWriter}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import statechange.LocationStateChangeEvent
 import util.Random
@@ -39,7 +39,8 @@ class LocationMutator(val baseDirString: String)
   def createRandom() : Seq[LocationStateChangeEvent] =
   {
     var events: Seq[LocationStateChangeEvent] = Seq.empty
-    for (i <- 0.until(rand.nextInt(5)+1))
+    val numCreates: Int = rand.nextInt(5)+1
+    for (i <- 0.until(numCreates))
     {
       val numDirs = if (rand.nextInt(5) > 1) 1 else (rand.nextInt(5) + 1)
       val fullPath = baseDirString + System.getProperty("file.separator") + Seq.fill(numDirs)(
@@ -124,40 +125,41 @@ class LocationMutator(val baseDirString: String)
   def deleteAll(): Seq[LocationStateChangeEvent] =
   {
     val events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue
-    deletePath(basePath, events)
+    if (basePath.toFile.exists)
+    {
+      deletePath(basePath.toFile, events)
+    }
     events
   }
 
-  private def deletePath(dir: Path, events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue): Boolean =
+  private def deletePath(pathFile: File, events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue)
   {
-    if (Files.isDirectory(dir))
+    var potentialEvent: LocationStateChangeEvent = null
+    val debugString = "" + (if(pathFile.isDirectory) "directory" else "file") + " at " + pathFile.getAbsolutePath
+    if (pathFile.isDirectory)
     {
-      val children = dir.toFile.list()
-      for (i <- 0 until children.length)
+      for (child : File <- pathFile.listFiles)
       {
-        if (deletePath(new File(dir.toFile, children(i)).toPath, events))
-        {
-          logDebug("deleted directory at " + dir.toFile.getAbsolutePath)
-        }
-        else
-        {
-          logDebug("failed to delete directory at " + dir.toFile.getAbsolutePath)
-        }
+        deletePath(child, events)
       }
-      true
     }
-    else if (dir.toFile.exists())
+    else
     {
-      val potentialEvent = new LocationStateChangeEvent(Some((new Resource(dir), dir)), None)
-      if (dir.toFile.delete())
+      potentialEvent = new LocationStateChangeEvent(Some((new Resource(pathFile.toPath), pathFile.toPath)), None)
+    }
+    if (!Files.deleteIfExists(pathFile.toPath))
+    {
+      logDebug("failed to delete non-existent " + debugString)
+    }
+    else
+    {
+      logDebug("deleted " + debugString)
+      // Only enqueue successful non-directory deletions
+      if (potentialEvent != null)
       {
         events.enqueue(potentialEvent)
-        logDebug("deleted file at " + dir.toFile.getAbsolutePath)
-        true
       }
-      logDebug("failed to delete file at " + dir.toFile.getAbsolutePath)
     }
-    false
   }
 
   def logDebug(debug: String)
