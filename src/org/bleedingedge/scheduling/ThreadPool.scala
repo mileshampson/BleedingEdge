@@ -12,6 +12,7 @@
 package org.bleedingedge.monitoring.scheduling
 
 import java.util.concurrent._
+import org.bleedingedge.monitoring.logging.LocalLogger
 
 // TODO actors, baby!
 object ThreadPool
@@ -28,5 +29,17 @@ object ThreadPool
          runMe()
        }
     })
+  }
+
+  def terminateAll()
+  {
+    val startThreads = Thread.getAllStackTraces.keySet.toArray.mkString(" ")
+    executor.awaitTermination(10, TimeUnit.MILLISECONDS)
+    executor.shutdown()
+    executor.awaitTermination(10, TimeUnit.MILLISECONDS)
+    executor.shutdownNow
+    val endThreads = Thread.getAllStackTraces.keySet.toArray.mkString(" ")
+    LocalLogger.recordDebug("Shut down started with  " + startThreads +
+      ", now the currently running threads are " + endThreads)
   }
 }

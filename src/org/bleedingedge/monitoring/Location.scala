@@ -17,6 +17,7 @@ import collection.mutable.{HashMap => mHMap}
 import scheduling.ThreadPool
 import statechange.LocationStateChangeEvent
 import org.bleedingedge.monitoring.logging.LocalLogger
+import java.util.concurrent.TimeUnit
 
 class Location(path : Path) {
   var locationChanges = new LocationChangeQueue()
@@ -57,18 +58,25 @@ class Location(path : Path) {
     ThreadPool.execute(scanChanges _)
   }
 
+  @volatile var keepLooping = true
+
+  def stopChangeScanning()
+  {
+    keepLooping = false
+    ResourceVisitor.watcher.close()
+    ThreadPool.terminateAll() // TODO this code needs to be removed before other threads are introduced
+  }
+
   def scanChanges():Object =
   {
-    // TODO The Little Turing Machine That Could (halt)
-    while (true)
+    while (keepLooping)
     {
-      val key = ResourceVisitor.watcher.take()
+      val key = ResourceVisitor.watcher.poll(100, TimeUnit.MILLISECONDS)
       val it = key.pollEvents().iterator
-      while (it.hasNext())
+      while (it.hasNext)
       {
         val event = it.next()
-        val kind = event.kind()
-        // TODO could do pattern patching on kind here
+        val kind = event.kind() // TODO move this method to a function that pattern matches on kind
         val path = ResourceVisitor.watchKeys.get(key).get.resolve(event.asInstanceOf[WatchEvent[Path]].context())
         updateResourcesAt(path)
       }
@@ -77,6 +85,7 @@ class Location(path : Path) {
         ResourceVisitor.watchKeys.remove(key)
       }
     }
+    LocalLogger.recordDebug("Scanning thread terminated")
     ResourceVisitor.watchKeys
   }
 

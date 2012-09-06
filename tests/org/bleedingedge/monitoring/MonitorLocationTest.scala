@@ -12,6 +12,7 @@
 package org.bleedingedge.monitoring
 
 import statechange.LocationStateChangeEvent
+import org.bleedingedge.monitoring.scheduling.ThreadPool
 
 object MonitorLocationTest extends TestHarness
 {
@@ -26,6 +27,7 @@ object MonitorLocationTest extends TestHarness
 
   def tearDown()
   {
+    location.stopChangeScanning()
     mutator.deleteAll()
   }
 

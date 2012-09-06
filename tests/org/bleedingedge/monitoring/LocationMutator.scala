@@ -12,7 +12,7 @@
 package org.bleedingedge.monitoring
 
 import java.nio.file.{StandardCopyOption, Files, Paths}
-import java.io.{File, FileWriter, BufferedWriter}
+import java.io.{FileNotFoundException, File, FileWriter, BufferedWriter}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import statechange.LocationStateChangeEvent
 import util.Random
@@ -132,24 +132,28 @@ class LocationMutator(val baseDirString: String)
     events
   }
 
-  private def deletePath(pathFile: File, events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue)
+  private def deletePath(file: File, events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue)
   {
     var potentialEvent: LocationStateChangeEvent = null
-    val debugString = "" + (if(pathFile.isDirectory) "directory" else "file") + " at " + pathFile.getAbsolutePath
-    if (pathFile.isDirectory)
+    val debugString = "" + (if(file.isDirectory) "directory" else "file") + " at " + file.getAbsolutePath
+    if (file.isDirectory)
     {
-      for (child : File <- pathFile.listFiles)
+      for (child <- file.listFiles)
       {
         deletePath(child, events)
       }
     }
     else
     {
-      potentialEvent = new LocationStateChangeEvent(Some((new Resource(pathFile.toPath), pathFile.toPath)), None)
+      potentialEvent = new LocationStateChangeEvent(Some((new Resource(file.toPath), file.toPath)), None)
     }
-    if (!Files.deleteIfExists(pathFile.toPath))
+    if (!file.delete())
     {
-      logDebug("failed to delete non-existent " + debugString)
+      val cause: String = if (!file.exists) "file does not exist" else if (!file.canRead) "cannot read file"
+      else if (!file.canWrite())  "cannot write file" else if (file.list != null && !file.list.isEmpty)
+        "containing files " + file.list.mkString(" ") else "unknown failure"
+      logDebug("failed to delete " + file + " due to " + cause + ", setting to delete on exit")
+      file.deleteOnExit()
     }
     else
     {
