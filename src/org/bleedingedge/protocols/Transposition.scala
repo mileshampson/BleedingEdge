@@ -9,36 +9,18 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.moving
+package org.bleedingedge
 
-import java.nio.file.{StandardCopyOption, Files, Path}
+import containers.{LocationStateChangeEvent, Resource, UpdateType}
+import java.nio.file.Path
 
-abstract class Command
+package object Transposition
 {
 
-}
-
-class MoveCommand(from: Path, to: Path) extends Command
-{
-  def apply()
+  def generateChangeEventsBetween(oldR: Seq[(Resource, Path)], newR: Seq[(Resource, Path)]): Seq[LocationStateChangeEvent] =
   {
-    Files.createDirectories(to)
-    Files.move(from, to.resolve(from.getFileName()), StandardCopyOption.REPLACE_EXISTING)
+    (oldR.padTo(newR.size, null) zip newR.padTo(oldR.size, null)).map(eventPair => new LocationStateChangeEvent(
+      Option(eventPair._1), Option(eventPair._2))).filterNot(event => event.eventType == UpdateType.NO_CHANGE)
   }
-}
 
-class DeleteCommand(location: Path) extends Command
-{
-  def apply()
-  {
-    Files.deleteIfExists(location)
-  }
-}
-
-class CreateCommand(remoteSource: Path, to: Path) extends Command
-{
-  def apply()
-  {
-    // TODO need to create a custom Path encapsulating the ssh operation
-  }
 }

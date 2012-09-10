@@ -9,7 +9,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.monitoring
+package org.bleedingedge.containers
 
 import java.nio.file._
 import java.security.MessageDigest
@@ -20,7 +20,7 @@ import java.math.BigInteger
  * Any resources that are considered unequal can later be split and the hashes of
  * the split components compared to see which section needs to be transmitted.
  */
-final class Resource(path : Path)
+final class Resource(path: Path)
 {
   // This will return the same value for the same resource across multiple JVMs
   val resourceHash = new BigInteger(1, MessageDigest.getInstance("MD5").digest(
@@ -33,8 +33,10 @@ final class Resource(path : Path)
   // k^2/(6.8*10^38) percent for k resources with our hash function) chance of the md5 hash
   // of the bytes of two different files also being equal. This does not violate the equals
   // contract, but means it is theoretically possible that a file change may be missed at some point.
-  override def equals(that: Any) = {
-    that match {
+  override def equals(that: Any) =
+  {
+    that match
+    {
       case r: Resource => r.fileLength == fileLength && r.resourceHash.equals(resourceHash)
       case _ => false
     }

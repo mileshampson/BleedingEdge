@@ -12,11 +12,11 @@
 package org.bleedingedge.monitoring
 
 import java.nio.file.{StandardCopyOption, Files, Paths}
-import java.io.{FileNotFoundException, File, FileWriter, BufferedWriter}
+import java.io.{File, FileWriter, BufferedWriter}
 import org.bleedingedge.monitoring.logging.LocalLogger
-import statechange.LocationStateChangeEvent
 import util.Random
 import collection.mutable
+import org.bleedingedge.containers.{Resource, LocationStateChangeEvent}
 
 /**
  * Utility that manages and manipulates a file system location for test purposes.

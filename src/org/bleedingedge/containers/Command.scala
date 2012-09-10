@@ -9,28 +9,35 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.monitoring.statechange
+package org.bleedingedge.containers
 
-import java.nio.file.Path
-import collection.mutable.{Queue => mQueue}
-import org.bleedingedge.monitoring.Resource
+import java.nio.file.{StandardCopyOption, Files, Path}
 
-/**
- * A network transferable specialisation of a location state
- * @param precomputedExistingPaths paths that exist at the current location
- */
-class ImmutableLocationState(private val precomputedExistingPaths: mQueue[(Resource, Path)]) extends LocationState
+// TODO replace this class with a resource protocol function
+abstract class Command
 {
-  /**
-   * No update of resources is possible for this class
-   * @param path will be ignored
-   */
-  override def updateResourceAt(path : Path)
-  {
-  }
+}
 
-  override def getExistingResources(): mQueue[(Resource, Path)] =
+class MoveCommand(from: Path, to: Path) extends Command
+{
+  def apply()
   {
-    precomputedExistingPaths
+    Files.createDirectories(to)
+    Files.move(from, to.resolve(from.getFileName()), StandardCopyOption.REPLACE_EXISTING)
+  }
+}
+
+class DeleteCommand(location: Path) extends Command
+{
+  def apply()
+  {
+    Files.deleteIfExists(location)
+  }
+}
+
+class CreateCommand(remoteSource: Path, to: Path) extends Command
+{
+  def apply()
+  {
   }
 }

@@ -11,8 +11,7 @@
 
 package org.bleedingedge.monitoring
 
-import statechange.LocationStateChangeEvent
-import org.bleedingedge.monitoring.scheduling.ThreadPool
+import org.bleedingedge.containers.LocationStateChangeEvent
 
 object MonitorLocationTest extends TestHarness
 {

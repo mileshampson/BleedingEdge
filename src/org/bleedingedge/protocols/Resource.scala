@@ -9,23 +9,17 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.bleedingedge.moving
+package org.bleedingedge
 
-import scala.collection.mutable.{Queue => mQueue}
-import org.bleedingedge.monitoring.statechange.{UpdateType}
+import collection.mutable.{MultiMap => mMMap}
+import containers.Resource
+import java.nio.file.Path
 
-class CommandQueue()
+package object Resource
 {
-  var commandQueue = new mQueue[Command]
+  def updateResource(changedPath: Path, currentResources: mMMap[Resource, Path]): mMMap[Resource, Path] =
+    currentResources.addBinding(new Resource(changedPath), changedPath)
 
-//  def addCommandFrom(event: LocationStateDelta)
-//  {
-//    event.updateType match
-//    {
-//      // TODO need to map the resource at UpdateType path to a file and pass it to the command
-//      case UpdateType.MOVE => commandQueue.enqueue(new MoveCommand(event.path1.get, event.path2.get))
-//      case UpdateType.DELETE => commandQueue.enqueue(new DeleteCommand(event.path1.get))
-//      case UpdateType.CREATE => commandQueue.enqueue(new CreateCommand(event.path1.get, event.path2.get))
-//    }
-//  }
+  def existingResources(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
+    toCheck.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
 }

@@ -11,12 +11,16 @@
 
 package org.bleedingedge.monitoring
 
-import statechange.{LocationStateChangeEvent, LocationState}
+import org.bleedingedge.containers.{Resource, LocationStateChangeEvent}
+import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet}
 import java.nio.file.Path
+import org.bleedingedge.Transposition.generateChangeEventsBetween
+import org.bleedingedge.Resource.existingResources
+import org.bleedingedge.Resource.updateResource
 
-class LocationChangeQueue(baselineState: LocationState = new LocationState())
+
+class LocationChangeQueue(var currentState: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path])
 {
-  val currentState = new LocationState()
   var stateChangeQueue: Seq[LocationStateChangeEvent] = Seq.empty
 
   /**
@@ -27,7 +31,8 @@ class LocationChangeQueue(baselineState: LocationState = new LocationState())
    */
   def processLocationUpdate(updatedPath: Path)
   {
-    currentState.updateResourceAt(updatedPath)
-    stateChangeQueue = baselineState.computeDeltaToState(currentState)
+    // TODO this depends on eval order, this class is being removed and this will be too.
+    stateChangeQueue = generateChangeEventsBetween(existingResources(currentState),
+      existingResources(updateResource(updatedPath, currentState)))
   }
 }

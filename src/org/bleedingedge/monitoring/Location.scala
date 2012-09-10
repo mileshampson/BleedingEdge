@@ -15,9 +15,9 @@ import java.nio.file._
 import attribute.BasicFileAttributes
 import collection.mutable.{HashMap => mHMap}
 import scheduling.ThreadPool
-import statechange.LocationStateChangeEvent
 import org.bleedingedge.monitoring.logging.LocalLogger
 import java.util.concurrent.TimeUnit
+import org.bleedingedge.containers.LocationStateChangeEvent
 
 class Location(path : Path) {
   var locationChanges = new LocationChangeQueue()
