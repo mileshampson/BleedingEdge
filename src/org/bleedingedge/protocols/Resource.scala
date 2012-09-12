@@ -13,13 +13,29 @@ package org.bleedingedge
 
 import collection.mutable.{MultiMap => mMMap}
 import containers.Resource
-import java.nio.file.Path
+import java.nio.file._
+import java.io.File
 
 package object Resource
 {
   def updateResource(changedPath: Path, currentResources: mMMap[Resource, Path]): mMMap[Resource, Path] =
     currentResources.addBinding(new Resource(changedPath), changedPath)
 
-  def existingResources(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
+  def filterNonExistent(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
     toCheck.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
+
+  def loadResourcesAt(fileHandle: File, result: mMMap[Resource, Path])
+  {
+    if(fileHandle.isDirectory)
+      for (containedFileHandle <- fileHandle.listFiles())
+        loadResourcesAt(containedFileHandle, result)
+    else
+      result.addBinding(new Resource(fileHandle.toPath), fileHandle.toPath)
+  }
+
+  def addWatcherTo(addToPaths:Seq[(Resource, Path)], watcherToAdd:WatchService):Map[WatchKey,Path]  =
+  {
+    addToPaths.map(item => (item._2.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
+                StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), item._2)).toMap
+  }
 }

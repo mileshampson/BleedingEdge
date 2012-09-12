@@ -12,45 +12,27 @@
 package org.bleedingedge.monitoring
 
 import java.nio.file._
-import attribute.BasicFileAttributes
-import collection.mutable.{HashMap => mHMap}
-import scheduling.ThreadPool
+import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import java.util.concurrent.TimeUnit
-import org.bleedingedge.containers.LocationStateChangeEvent
+import org.bleedingedge.containers.{Resource, LocationStateChangeEvent}
+import org.bleedingedge.scheduling.ThreadPool
+import org.bleedingedge.Resource._
+import org.bleedingedge.Transposition._
 
+// TODO temporary class for testing, to be removed
 class Location(path : Path) {
-  var locationChanges = new LocationChangeQueue()
+  var currentState: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path]
+  loadResourcesAt(path.toFile, currentState)
+  val watcher:WatchService = FileSystems.getDefault.newWatchService()
+  var watchKeys = addWatcherTo(filterNonExistent(currentState), watcher)
+  var stateChangeQueue: Seq[LocationStateChangeEvent] = Seq.empty
 
-  updateResourcesAt(path)
-
-  // TODO At the moment is called multiple times for the same file due to the java FSW implementation, this is
-  // inefficient but functionally not a problem as this does not change the internal state of LocationState
-  def updateResourcesAt(location : Path)
+  def processLocationUpdate(updatedPath: Path)
   {
-    location.toFile.isFile match {
-      case true => locationChanges.processLocationUpdate(location)
-      case _ => Files.walkFileTree(path, ResourceVisitor)
-    }
-  }
-
-  object ResourceVisitor extends SimpleFileVisitor[Path]
-  {
-    val watcher:WatchService = FileSystems.getDefault().newWatchService()
-    val watchKeys = new mHMap[WatchKey,Path]
-
-    override def preVisitDirectory(dirPath:Path, att:BasicFileAttributes):FileVisitResult  =
-    {
-      watchKeys.put(dirPath.register(watcher, StandardWatchEventKinds.ENTRY_CREATE,
-        StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), dirPath)
-      FileVisitResult.CONTINUE
-    }
-
-    override def visitFile(filePath:Path, att:BasicFileAttributes):FileVisitResult  =
-    {
-      updateResourcesAt(filePath)
-      FileVisitResult.CONTINUE
-    }
+    // TODO will miss events that take longer than 1 update (like move), need to recalculate delta from baseline
+    stateChangeQueue = generateChangeEventsBetween(
+      filterNonExistent(currentState), filterNonExistent(updateResource(updatedPath, currentState)))
   }
 
   def startChangeScanning()
@@ -63,7 +45,7 @@ class Location(path : Path) {
   def stopChangeScanning()
   {
     keepLooping = false
-    ResourceVisitor.watcher.close()
+    watcher.close()
     ThreadPool.terminateAll() // TODO this code needs to be removed before other threads are introduced
   }
 
@@ -71,31 +53,31 @@ class Location(path : Path) {
   {
     while (keepLooping)
     {
-      val key = ResourceVisitor.watcher.poll(100, TimeUnit.MILLISECONDS)
+      val key = watcher.poll(100, TimeUnit.MILLISECONDS)
       val it = key.pollEvents().iterator
       while (it.hasNext)
       {
         val event = it.next()
         val kind = event.kind() // TODO move this method to a function that pattern matches on kind
-        val path = ResourceVisitor.watchKeys.get(key).get.resolve(event.asInstanceOf[WatchEvent[Path]].context())
-        updateResourcesAt(path)
+        val path = watchKeys.get(key).get.resolve(event.asInstanceOf[WatchEvent[Path]].context())
+        processLocationUpdate(path)
+        watchKeys = watchKeys ++ addWatcherTo(Seq((new Resource(path), path)), watcher)
       }
       if (!key.reset())
       {
-        ResourceVisitor.watchKeys.remove(key)
+        watchKeys = watchKeys - key
       }
     }
     LocalLogger.recordDebug("Scanning thread terminated")
-    ResourceVisitor.watchKeys
+    watchKeys
   }
 
   def dequeueChanges(): Seq[LocationStateChangeEvent] =
   {
-    val changesUntilNow = locationChanges.stateChangeQueue
-    // Reset the changed state to the current state
-    locationChanges = new LocationChangeQueue(locationChanges.currentState)
+    val changesUntilNow = stateChangeQueue
+    stateChangeQueue = Seq.empty
     changesUntilNow
   }
 
-  def numberOfChanges = locationChanges.stateChangeQueue.size
+  def numberOfChanges = stateChangeQueue.size
 }
