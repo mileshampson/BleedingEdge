@@ -12,10 +12,9 @@
 package org.bleedingedge
 
 import java.nio.file.Paths
-import monitoring.Location
 
 object ClientViewController extends App
 {
   val path = Paths.get(args(0))
-  new Location(path).startChangeScanning()
+  new DirectoryMonitor(path).startChangeScanning()
 }

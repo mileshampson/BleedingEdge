@@ -11,10 +11,11 @@
 
 package org.bleedingedge
 
-import collection.mutable.{MultiMap => mMMap}
+import collection.mutable.{MultiMap => mMMap, HashMap => mHMap}
 import containers.Resource
 import java.nio.file._
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 package object Resource
 {
@@ -33,9 +34,29 @@ package object Resource
       result.addBinding(new Resource(fileHandle.toPath), fileHandle.toPath)
   }
 
-  def addWatcherTo(addToPaths:Seq[(Resource, Path)], watcherToAdd:WatchService):Map[WatchKey,Path]  =
+  def addWatcherTo(addToPaths:Seq[(Resource, Path)], watcherToAdd:WatchService): mHMap[WatchKey,Path]  =
   {
-    addToPaths.map(item => (item._2.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
-                StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), item._2)).toMap
+    mHMap(addToPaths.map(item => (item._2.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
+                StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), item._2)).toSeq: _*)
+  }
+
+  def scanDirectoryForChanges(locationUpdateFn: (Path) => Unit, watcher: WatchService, foundKeys: mHMap[WatchKey,Path])
+  {
+    Iterator.iterate(watcher.poll(100, TimeUnit.MILLISECONDS))(key =>
+    {
+      val it = key.pollEvents().iterator
+      while (it.hasNext)
+      {
+        val path: Path = foundKeys.get(key).get.resolve(it.next().asInstanceOf[WatchEvent[Path]].context())
+        locationUpdateFn(path)
+        foundKeys ++= addWatcherTo(Seq((new Resource(path), path)), watcher)
+      }
+      if (!key.reset())
+      {
+        // TODO if this is the only way we get delete events need up update location here as well
+        foundKeys -= key
+      }
+      key
+    })
   }
 }

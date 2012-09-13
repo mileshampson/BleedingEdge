@@ -12,16 +12,17 @@
 package org.bleedingedge.monitoring
 
 import org.bleedingedge.containers.LocationStateChangeEvent
+import org.bleedingedge.DirectoryMonitor
 
 object MonitorLocationTest extends TestHarness
 {
   var mutator: org.bleedingedge.monitoring.LocationMutator = _
-  var location: org.bleedingedge.monitoring.Location = _
+  var location: org.bleedingedge.DirectoryMonitor = _
 
   def setUp()
   {
     mutator = new LocationMutator(System.getProperty("user.dir") + System.getProperty("file.separator") + "testDir")
-    location = new Location(mutator.basePath)
+    location = new DirectoryMonitor(mutator.basePath)
   }
 
   def tearDown()
