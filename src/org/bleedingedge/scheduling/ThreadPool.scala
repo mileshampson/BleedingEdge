@@ -22,11 +22,25 @@ object ThreadPool
 
   def execute(runMe: () => Object):Future[Object] =
   {
+    var returnVal: Object = null
     ecs.submit(new Callable[Object]
     {
        override def call():Object =
        {
-         runMe()
+         try
+         {
+           returnVal = runMe()
+         }
+         catch
+         {
+           case e: Exception =>
+           {
+             LocalLogger.recordDebug("Run exception " + e.getMessage)
+             LocalLogger.recordError("Encountered error while running task", "Aborting task")
+             LocalLogger.recordException(e)
+           }
+         }
+         returnVal
        }
     })
   }

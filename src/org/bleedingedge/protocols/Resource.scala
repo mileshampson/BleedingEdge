@@ -11,52 +11,67 @@
 
 package org.bleedingedge
 
-import collection.mutable.{MultiMap => mMMap, HashMap => mHMap}
-import containers.Resource
+import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, Queue => mQueue}
+import containers.{LocationStateChangeEvent, Resource}
 import java.nio.file._
-import java.io.File
-import java.util.concurrent.TimeUnit
+import monitoring.logging.LocalLogger
+import org.bleedingedge.Transposition._
 
 package object Resource
 {
-  def updateResource(changedPath: Path, currentResources: mMMap[Resource, Path]): mMMap[Resource, Path] =
-    currentResources.addBinding(new Resource(changedPath), changedPath)
+  private def updateResource(changedPath: Path, currentResources: mMMap[Resource, Path]): mMMap[Resource, Path] =
+    if (!changedPath.toFile.isDirectory && changedPath.toFile.exists)
+      currentResources.addBinding(new Resource(changedPath), changedPath) else currentResources
 
-  def filterNonExistent(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
+  private def filterNonExistent(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
     toCheck.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
 
-  def loadResourcesAt(fileHandle: File, result: mMMap[Resource, Path])
+  private def loadResourcesAt(pathToHandle: Path, scanKeys: mHMap[WatchKey,Path],
+                              watcherToAdd: WatchService, result: mMMap[Resource, Path])
   {
-    if(fileHandle.isDirectory)
-      for (containedFileHandle <- fileHandle.listFiles())
-        loadResourcesAt(containedFileHandle, result)
-    else
-      result.addBinding(new Resource(fileHandle.toPath), fileHandle.toPath)
-  }
-
-  def addWatcherTo(addToPaths:Seq[(Resource, Path)], watcherToAdd:WatchService): mHMap[WatchKey,Path]  =
-  {
-    mHMap(addToPaths.map(item => (item._2.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
-                StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), item._2)).toSeq: _*)
-  }
-
-  def scanDirectoryForChanges(locationUpdateFn: (Path) => Unit, watcher: WatchService, foundKeys: mHMap[WatchKey,Path])
-  {
-    Iterator.iterate(watcher.poll(100, TimeUnit.MILLISECONDS))(key =>
+    if (pathToHandle.toFile.isDirectory)
     {
-      val it = key.pollEvents().iterator
-      while (it.hasNext)
+      scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
+                   StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
+      for (containedFileHandle <- pathToHandle.toFile.listFiles())
+        loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, result)
+    }
+    else if (pathToHandle.toFile.exists)
+      result.addBinding(new Resource(pathToHandle), pathToHandle)
+  }
+
+  def scanDirectoryForChanges(dirPath: Path, stateChangeQueue: mQueue[LocationStateChangeEvent])
+  {
+    val baselineState: Seq[(Resource, Path)] = Seq.empty
+    val currentState: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path]
+    val watcher: WatchService = FileSystems.getDefault.newWatchService()
+    var watchKeys = mHMap.empty[WatchKey,Path]
+    loadResourcesAt(dirPath, watchKeys, watcher, currentState)
+    stateChangeQueue ++= generateChangeEventsBetween(baselineState, filterNonExistent(currentState))
+    try
+    {
+      Iterator.continually(watcher.take).foreach(key =>
       {
-        val path: Path = foundKeys.get(key).get.resolve(it.next().asInstanceOf[WatchEvent[Path]].context())
-        locationUpdateFn(path)
-        foundKeys ++= addWatcherTo(Seq((new Resource(path), path)), watcher)
-      }
-      if (!key.reset())
+        val it = key.pollEvents().iterator
+        while (it.hasNext)
+        {
+          val path: Path = watchKeys.get(key).get.resolve(it.next().asInstanceOf[WatchEvent[Path]].context())
+          LocalLogger.recordDebug("Update at " + path)
+          loadResourcesAt(path, watchKeys, watcher, currentState)
+          // TODO regenerate all is inefficent
+          stateChangeQueue.clear()
+          stateChangeQueue ++= generateChangeEventsBetween(baselineState, filterNonExistent(updateResource(path, currentState)))
+        }
+        // TODO check !key.reset() => watchKeys -= key
+      })
+    }
+    catch
+    {
+      case e: InterruptedException =>
       {
-        // TODO if this is the only way we get delete events need up update location here as well
-        foundKeys -= key
+        watcher.close()
+        LocalLogger.recordDebug(e.getMessage)
       }
-      key
-    })
+    }
   }
 }

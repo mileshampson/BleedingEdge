@@ -14,7 +14,7 @@ package org.bleedingedge.monitoring.logging
 import java.text.SimpleDateFormat
 import sun.reflect.Reflection
 import java.util.Date
-import java.io.{File, FileOutputStream, PrintWriter}
+import java.io.{StringWriter, File, FileOutputStream, PrintWriter}
 import java.nio.file.Paths
 
 // TODO synchronise access by making an actor
@@ -29,7 +29,7 @@ object LocalLogger extends Logger
   def recordException(exception: Exception)
   {
     record.error(EXCEPTION_NOTE + DIVIDER + timestamp.format(new Date()) +
-      DIVIDER + exception.getMessage())
+      DIVIDER + getStackTrace(exception))
   }
 
   def recordError(problem: String, resolution: String)
@@ -67,6 +67,7 @@ object LocalLogger extends Logger
 
     def error(error: String)
     {
+      println(error)
       errorWriter.println(error)
       errorWriter.flush()
     }
@@ -93,5 +94,15 @@ object LocalLogger extends Logger
       eventWriter.close()
       debugWriter.close()
     }
+  }
+
+  def getStackTrace(t: Throwable): String =
+  {
+    val sw = new StringWriter()
+    val pw = new PrintWriter(sw, true)
+    t.printStackTrace(pw)
+    pw.flush()
+    sw.flush()
+    sw.toString
   }
 }

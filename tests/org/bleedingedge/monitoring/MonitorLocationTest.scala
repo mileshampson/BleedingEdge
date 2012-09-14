@@ -68,6 +68,8 @@ object MonitorLocationTest extends TestHarness
     val actual: Seq[LocationStateChangeEvent] = location.dequeueChanges()
     val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
     val additionalPassInfo = " with expected result [" + actual.mkString(",") + "]."
-    assertCondition(actual.equals(expected), failMsg + additionalFailInfo, passMsg + additionalPassInfo)
+    // Compare unordered
+    assertCondition(expected.toSet.subsetOf(actual.toSet) && actual.toSet.subsetOf(expected.toSet),
+                    failMsg + additionalFailInfo, passMsg + additionalPassInfo)
   }
 }
