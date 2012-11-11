@@ -11,9 +11,10 @@
 
 package org.bleedingedge.monitoring
 
-import org.bleedingedge.containers.LocationStateChangeEvent
 import org.bleedingedge.DirectoryMonitor
+import org.bleedingedge.containers.LocationState
 
+// TODO needs to be updated
 object MonitorLocationTest extends TestHarness
 {
   var mutator: org.bleedingedge.monitoring.LocationMutator = _
@@ -38,7 +39,7 @@ object MonitorLocationTest extends TestHarness
 
   def singleOperationTypeTests()
   {
-    val createdSet: Seq[LocationStateChangeEvent] = mutator.createRandom()
+    val createdSet: Seq[LocationState] = mutator.createRandom()
     assertChangeEventsMatch(Seq.empty, "Scanning has not started", "Passed pre-scan test")
 
     location.startChangeScanning()
@@ -46,10 +47,10 @@ object MonitorLocationTest extends TestHarness
 
     // TODO delete (so also move) are failing due to not receiving an event to trigger a delta from something to nothing
     // TODO look at whether we just get one file system event for the activity
-    val changedSet: Seq[LocationStateChangeEvent] = mutator.modifySomeExistingFiles()
+    val changedSet: Seq[LocationState] = mutator.modifySomeExistingFiles()
     assertChangeEventsMatch(changedSet, "Not all modifies were enqueued", "All modifies enqueued")
 
-    val deletedSet: Seq[LocationStateChangeEvent] = mutator.deleteAll()
+    val deletedSet: Seq[LocationState] = mutator.deleteAll()
     assertChangeEventsMatch(deletedSet, "Not all deletes were enqueued", "All deletes enqueued")
   }
 
@@ -57,7 +58,7 @@ object MonitorLocationTest extends TestHarness
   {
   }
 
-  def assertChangeEventsMatch(expected: Seq[LocationStateChangeEvent], failMsg: String, passMsg: String)
+  def assertChangeEventsMatch(expected: Seq[LocationState], failMsg: String, passMsg: String)
   {
     var numLoops = 0
     while(location.numberOfChanges != expected.size && numLoops < 10)
@@ -65,7 +66,7 @@ object MonitorLocationTest extends TestHarness
       numLoops+=1
       Thread.sleep(100)
     }
-    val actual: Seq[LocationStateChangeEvent] = location.dequeueChanges()
+    val actual: Seq[LocationState] = location.dequeueChanges()
     val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
     val additionalPassInfo = " with expected result [" + actual.mkString(",") + "]."
     // Compare unordered

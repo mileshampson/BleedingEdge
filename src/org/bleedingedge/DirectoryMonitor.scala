@@ -11,28 +11,28 @@
 
 package org.bleedingedge
 
+import containers.LocationState
 import java.nio.file._
-import collection.mutable.{Queue => mQueue}
+import collection.mutable.{MutableList => mList}
 import monitoring.logging.LocalLogger
-import org.bleedingedge.containers.LocationStateChangeEvent
 import org.bleedingedge.scheduling.ThreadPool
 import org.bleedingedge.Resource._
 
 // TODO temporary class for testing, to be removed
 class DirectoryMonitor(path: Path)
 {
-  var stateChangeQueue: mQueue[LocationStateChangeEvent] = mQueue.empty
+  private val updateList: mList[LocationState] = mList.empty
 
   def startChangeScanning()
   {
-    ThreadPool.execute(scanChanges _)
+    ThreadPool.execute(){scanChanges _}
   }
 
   def scanChanges():Object =
   {
-    scanDirectoryForChanges(path, stateChangeQueue)
+    scanDirectoryForChanges(path, updateList)
     LocalLogger.recordDebug("Scanning thread terminated")
-    stateChangeQueue
+    updateList
   }
 
   def stopChangeScanning()
@@ -40,12 +40,12 @@ class DirectoryMonitor(path: Path)
     ThreadPool.terminateAll() // TODO this code needs to be removed before other threads are introduced
   }
 
-  def dequeueChanges(): Seq[LocationStateChangeEvent] =
+  def dequeueChanges(): Seq[LocationState] =
   {
-    val changesUntilNow = stateChangeQueue
-    stateChangeQueue = mQueue.empty
+    val changesUntilNow = updateList.toSeq
+    updateList.clear()
     changesUntilNow
   }
 
-  def numberOfChanges = stateChangeQueue.size
+  def numberOfChanges = updateList.length
 }

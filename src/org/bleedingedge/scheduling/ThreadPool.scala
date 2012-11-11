@@ -20,7 +20,7 @@ object ThreadPool
   private val executor = Executors.newFixedThreadPool(4)
   private val ecs = new ExecutorCompletionService[Object](executor)
 
-  def execute(runMe: () => Object):Future[Object] =
+  def execute()(runMe: () => Object):Future[Object] =
   {
     var returnVal: Object = null
     ecs.submit(new Callable[Object]

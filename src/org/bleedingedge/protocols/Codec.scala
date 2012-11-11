@@ -13,28 +13,36 @@ package org.bleedingedge
 
 import containers._
 import java.io.{DataOutputStream, ByteArrayOutputStream}
+import scala.Array
+import util.Random
 
-package object Transposition
+// TODO
+package object Codec
 {
-  /**
-   * Updates the current snapshot (TODO specify snapshot and fold continually to avoid state update) with the specified
-   * update, and provides the current location states if a new snapshot needs to be created due to the specified update
-   * affecting an existing location.
-   * @param locationState new location state information
-   * @return a list of new location state information that needs to be published.
-   */
-  def packChange(locationState: LocationState): List[LocationState] = Snapshot(locationState).map{_.states}.get
+  def statesToBytes(states: List[LocationState]): Array[Byte] = states.map(state => LocationState.asBytes(state)).reduce(_++_)
 
-  /**
-   * The operations needed to transform the first snapshot into the second snapshot
-   * @param oldSnapshot the old state
-   * @param newSnapshot the new state
-   * @return a sequence of operations for performing the changes
-   */
-  def operationsBetween(oldSnapshot: Snapshot, newSnapshot: Snapshot): Seq[Command] =
-    allOperationsBetween(oldSnapshot, newSnapshot).filterNot(_.isInstanceOf[DoNothingCommand])
+  // TODO make tail recursive so we don't have to worry about the recursion depth for large byte arrays
+  def bytesToStates(bytes: Array[Byte], n: Int = 0): List[LocationState] =
+  {
+    if (n >= bytes.length) Nil
+    else {
+      val state = bytesToState(bytes, n)
+      state :: bytesToStates(bytes, n + state.byteId.originalLength)
+    }
+  }
 
-  private def allOperationsBetween(oldState: Snapshot, newState: Snapshot): Seq[Command] = oldState.states.zipAll(
-    newState.states, LocationState(), LocationState()) map {case (earlier, later) => Command(earlier, later)}
+  def bytesToState(bytes: Array[Byte], startPos: Int) : LocationState = LocationState(bytes, startPos, stateRequestFn _)
 
+  // TODO need to start a receiver rather than returning these bytes. Can either speculatively block this thread for
+  // TODO a while pending a response, or immediately fail the operation and rely on the client retrying it
+  def stateRequestFn(hostname: String, resourceId: String, resourceLength: Int): Array[Byte] =
+  {
+    val outgoingBytes = new ByteArrayOutputStream()
+    val outBuffer = new DataOutputStream(outgoingBytes)
+    outBuffer.writeShort(MessageType.STATE_REQUEST.ordinal())
+    outBuffer.writeUTF(hostname)
+    outBuffer.writeInt(resourceLength)
+    outBuffer.writeUTF(resourceId)
+    outgoingBytes.toByteArray
+  }
 }

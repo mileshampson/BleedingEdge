@@ -11,33 +11,84 @@
 
 package org.bleedingedge.containers
 
-import java.nio.file.{StandardCopyOption, Files, Path}
+import java.nio.file._
 
-// TODO replace this class with a resource protocol function
 abstract class Command
 {
-}
+  def apply(dirBase: Path)
 
-class MoveCommand(from: Path, to: Path) extends Command
-{
-  def apply()
+  def makePath(parent: Path, child: String): Path =
   {
-    Files.createDirectories(to)
-    Files.move(from, to.resolve(from.getFileName()), StandardCopyOption.REPLACE_EXISTING)
+    // TODO match common root recursive (Paths.get(from).getParent.equals(Paths.get(to).getParent))
+    Paths.get(child)
   }
 }
 
-class DeleteCommand(location: Path) extends Command
+class MoveCommand(from: String, to: String) extends Command
 {
-  def apply()
+  override def apply(dirBase: Path)
   {
-    Files.deleteIfExists(location)
+    val localFrom = makePath(dirBase, from)
+    val localTo = makePath(dirBase, from)
+    Files.createDirectories(localTo)
+    Files.move(localFrom, localTo.resolve(localFrom.getFileName), StandardCopyOption.REPLACE_EXISTING)
   }
 }
 
-class CreateCommand(remoteSource: Path, to: Path) extends Command
+class DeleteCommand(location: String) extends Command
 {
-  def apply()
+  override def apply(dirBase: Path)
+  {
+    Files.deleteIfExists(makePath(dirBase, location))
+  }
+}
+
+class CreateCommand(location: String, byteLookupFn: () => Array[Byte]) extends Command
+{
+  override def apply(dirBase: Path)
+  {
+    // Fail if the file already exists
+    Files.write(makePath(dirBase, location), byteLookupFn(), StandardOpenOption.CREATE_NEW)
+  }
+}
+
+class UpdateCommand(location: String, byteLookupFn: () => Array[Byte]) extends Command
+{
+  override def apply(dirBase: Path)
+  {
+    // TODO needs a lot of work to match sections (like rsync). For now just update everything (unsafe if failure)!
+    Files.deleteIfExists(makePath(dirBase, location))
+    Files.write(makePath(dirBase, location), byteLookupFn(), StandardOpenOption.CREATE_NEW)
+  }
+}
+
+class DoNothingCommand() extends Command
+{
+  override def apply(dirBase: Path)
   {
   }
 }
+
+object Command
+{
+
+  def apply(earlier: LocationState, later: LocationState) =
+  {
+    // Optimise common cases by doing calculations once only
+    val byteIdEqual = earlier.byteId == later.byteId
+    val locationsEqual = earlier.location == later.location
+    if (byteIdEqual) {
+      if (locationsEqual) new DoNothingCommand()  // No change
+      new MoveCommand(earlier.location, later.location)
+    }
+    else if (locationsEqual) {
+      if (earlier.byteId.originalLength == 0) new CreateCommand(later.location, later.byteLookupFn)
+      else if (later.byteId.originalLength == 0) new DeleteCommand(earlier.location)
+      new UpdateCommand(later.location, later.byteLookupFn)
+    }
+    new DoNothingCommand() // Not related
+  }
+
+}
+
+

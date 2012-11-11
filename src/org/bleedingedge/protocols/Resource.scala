@@ -11,43 +11,35 @@
 
 package org.bleedingedge
 
-import collection.mutable.{MultiMap => mMMap, HashMap => mHMap, Set => mSet, Queue => mQueue}
-import containers.{LocationStateChangeEvent, Resource}
+import collection.mutable.{HashMap => mHMap, MutableList => mList}
+import containers.LocationState
 import java.nio.file._
 import monitoring.logging.LocalLogger
-import org.bleedingedge.Transposition._
+import java.io.{FileInputStream, BufferedInputStream, File}
 
 package object Resource
 {
-  private def updateResource(changedPath: Path, currentResources: mMMap[Resource, Path]): mMMap[Resource, Path] =
-    if (!changedPath.toFile.isDirectory && changedPath.toFile.exists)
-      currentResources.addBinding(new Resource(changedPath), changedPath) else currentResources
-
-  private def filterNonExistent(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
-    toCheck.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
-
   private def loadResourcesAt(pathToHandle: Path, scanKeys: mHMap[WatchKey,Path],
-                              watcherToAdd: WatchService, result: mMMap[Resource, Path])
+                              watcherToAdd: WatchService, updateList: mList[LocationState])
   {
-    if (pathToHandle.toFile.isDirectory)
+    val fileToHandle = pathToHandle.toFile
+    if (fileToHandle.isDirectory)
     {
       scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
                    StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
-      for (containedFileHandle <- pathToHandle.toFile.listFiles())
-        loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, result)
+      for (containedFileHandle <- fileToHandle.listFiles())
+        loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, updateList)
     }
-    else if (pathToHandle.toFile.exists)
-      result.addBinding(new Resource(pathToHandle), pathToHandle)
+    else if (fileToHandle.exists)
+      updateList++= Transposition.packChange(new LocationState(pathToHandle.toUri.getPath, bytesFromFile(fileToHandle)))
   }
 
-  def scanDirectoryForChanges(dirPath: Path, stateChangeQueue: mQueue[LocationStateChangeEvent])
+  // TODO send message to appropriate actor rather than adding to the second parameter
+  def scanDirectoryForChanges(dirPath: Path, updateList: mList[LocationState])
   {
-    val baselineState: Seq[(Resource, Path)] = Seq.empty
-    val currentState: mMMap[Resource, Path] = new mHMap[Resource, mSet[Path]] with mMMap[Resource, Path]
     val watcher: WatchService = FileSystems.getDefault.newWatchService()
-    var watchKeys = mHMap.empty[WatchKey,Path]
-    loadResourcesAt(dirPath, watchKeys, watcher, currentState)
-    stateChangeQueue ++= generateChangeEventsBetween(baselineState, filterNonExistent(currentState))
+    val watchKeys = mHMap.empty[WatchKey,Path]
+    loadResourcesAt(dirPath, watchKeys, watcher, updateList)
     try
     {
       Iterator.continually(watcher.take).foreach(key =>
@@ -57,10 +49,7 @@ package object Resource
         {
           val path: Path = watchKeys.get(key).get.resolve(it.next().asInstanceOf[WatchEvent[Path]].context())
           LocalLogger.recordDebug("Update at " + path)
-          loadResourcesAt(path, watchKeys, watcher, currentState)
-          // TODO regenerate all is inefficent
-          stateChangeQueue.clear()
-          stateChangeQueue ++= generateChangeEventsBetween(baselineState, filterNonExistent(updateResource(path, currentState)))
+          loadResourcesAt(path, watchKeys, watcher, updateList)
         }
         // TODO check !key.reset() => watchKeys -= key
       })
@@ -74,4 +63,13 @@ package object Resource
       }
     }
   }
+
+  def bytesFromFile(fileName: File): Array[Byte] =
+  {
+    val bis = new BufferedInputStream(new FileInputStream(fileName))
+    Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toArray
+  }
+
+//  private def filterNonExistent(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
+//    toCheck.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
 }

@@ -16,11 +16,13 @@ import java.io.{File, FileWriter, BufferedWriter}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import util.Random
 import collection.mutable
-import org.bleedingedge.containers.{Resource, LocationStateChangeEvent}
+import org.bleedingedge.containers.LocationState
+import org.bleedingedge.Resource.bytesFromFile
 
 /**
  * Utility that manages and manipulates a file system location for test purposes.
  */
+// TODO
 class LocationMutator(val baseDirString: String)
 {
   val basePath = Paths.get(baseDirString)
@@ -36,9 +38,9 @@ class LocationMutator(val baseDirString: String)
    * TODO create multiple files in subdirectories.
    * @return A queue containing the state change events required to generate the end state of the test directory.
    */
-  def createRandom() : Seq[LocationStateChangeEvent] =
+  def createRandom() : Seq[LocationState] =
   {
-    var events: Seq[LocationStateChangeEvent] = Seq.empty
+    var events: Seq[LocationState] = Seq.empty
     val numCreates: Int = rand.nextInt(5)+1
     for (i <- 0.until(numCreates))
     {
@@ -50,24 +52,22 @@ class LocationMutator(val baseDirString: String)
     events
   }
 
-  def createFile(fullPathString: String) : LocationStateChangeEvent =
+  def createFile(fullPathString: String) : LocationState =
   {
     new File(fullPathString).getParentFile().mkdirs()
     val fullPath = Paths.get(fullPathString)
     Files.createFile(fullPath)
-    val res = new Resource(fullPath)
-    logDebug("created " + res + " at " + fullPathString)
-    new LocationStateChangeEvent(None, Some((res, fullPath)))
+    new LocationState(fullPathString, bytesFromFile(fullPath.toFile))
   }
 
-  def modifySomeExistingFiles() : Seq[LocationStateChangeEvent] =
+  def modifySomeExistingFiles() : Seq[LocationState] =
   {
     modifySomeExistingFiles(new File(baseDirString))
   }
 
-  def modifySomeExistingFiles(toModify: File) : Seq[LocationStateChangeEvent] =
+  def modifySomeExistingFiles(toModify: File) : Seq[LocationState] =
   {
-    var events: Seq[LocationStateChangeEvent] = Seq.empty
+    var events: Seq[LocationState] = Seq.empty
     toModify.listFiles().foreach(file =>
       if (file.isDirectory()) {
         events ++= modifySomeExistingFiles(file)
@@ -80,28 +80,23 @@ class LocationMutator(val baseDirString: String)
           {
             val fullPath = file.getAbsolutePath
             val fullPathType = Paths.get(fullPath)
-            val oldRes = new Resource(fullPathType)
             // Write a small amount of random characters to the file
             val out = new BufferedWriter(new FileWriter(file))
             out.write(java.lang.Long.toString(rand.nextLong(), 36).substring(1))
             out.close()
-            val newRes = new Resource(fullPathType)
-            logDebug("modified " + oldRes + " to " + newRes + " at " + fullPath)
-            events = events :+ new LocationStateChangeEvent(Some((oldRes, fullPathType)), Some((newRes, fullPathType)))
+            events = events :+ new LocationState(fullPath, bytesFromFile(file))
           }
           // else a move
           else
           {
             val oldPathString = file.getAbsolutePath
             val oldPath = Paths.get(oldPathString)
-            val oldRes = new Resource(oldPath)
             var newFileName = baseDirString
             // A rename (move in the same directory)
             if (rand.nextBoolean())
             {
               newFileName = file.getParent + System.getProperty("file.separator") +
                             java.lang.Long.toString(rand.nextLong(), 36).substring(1)
-              logDebug("renamed " + oldRes + " from " + oldPathString + " to " + newFileName)
             }
             // else a move anywhere in the testDir
             else
@@ -110,21 +105,19 @@ class LocationMutator(val baseDirString: String)
               newFileName += System.getProperty("file.separator") + Seq.fill(numDirs)(java.lang.Long.toString(
                 rand.nextLong(), 36).substring(1)).mkString(System.getProperty("file.separator"))
               new File(newFileName).getParentFile().mkdirs()
-              logDebug("moved " + oldRes + " from " + oldPathString + " to " + newFileName)
             }
             val newPath = Paths.get(newFileName)
             Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
-            val newRes = new Resource(newPath)
-            events = events :+ new LocationStateChangeEvent(Some((oldRes, oldPath)), Some((newRes, newPath)))
+            events = events :+ new LocationState(newFileName, bytesFromFile(file))
           }
         }
       })
     events
   }
 
-  def deleteAll(): Seq[LocationStateChangeEvent] =
+  def deleteAll(): Seq[LocationState] =
   {
-    val events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue
+    val events: mutable.Queue[LocationState] = new mutable.Queue
     if (basePath.toFile.exists)
     {
       deletePath(basePath.toFile, events)
@@ -132,9 +125,9 @@ class LocationMutator(val baseDirString: String)
     events
   }
 
-  private def deletePath(file: File, events: mutable.Queue[LocationStateChangeEvent] = new mutable.Queue)
+  private def deletePath(file: File, events: mutable.Queue[LocationState] = new mutable.Queue)
   {
-    var potentialEvent: LocationStateChangeEvent = null
+    var potentialEvent: LocationState = null
     val debugString = "" + (if(file.isDirectory) "directory" else "file") + " at " + file.getAbsolutePath
     if (file.isDirectory)
     {
@@ -145,7 +138,7 @@ class LocationMutator(val baseDirString: String)
     }
     else
     {
-      potentialEvent = new LocationStateChangeEvent(Some((new Resource(file.toPath), file.toPath)), None)
+      potentialEvent = new LocationState(file.getPath, bytesFromFile(file))
     }
     if (!file.delete())
     {

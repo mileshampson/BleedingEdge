@@ -22,25 +22,19 @@ bytes towards filesystem changes.
 * Processes user specification of locations where file system events can 
 be shared, which groups to communicate them with, and what filtering to apply.
 
-**2 - Resource. Translates between a filesystem and the library.**
-* A function monitoring a location and outputting a set of resources 
-that change at that location.
-* A function taking a queue of change events and perfoming them on
-the filesystem.
+**2 - Resource. The representation of the filesystem.**
+* A function monitoring a location and outputting its state.
+* A function taking a set of commands and performing them on the filesystem.
 
-**3 - Transposition. Shifts data between change events and resources.** 
-* A function taking two sets of resources and outputting a queue of the add, 
-delete, move or update events containing the rdiff byte changes between them.
-* A function taking a queue of byte change events and a set of resources, 
-which applies the changes to the resources and outputs them.
+**3 - Transposition. Generates changes from timestamped filesystem data.** 
+* A function folding filesystem states into transmissable snapshots.
+* A function folding filesystem states into a queue of changes to be performed 
+locally.
 
-**4 - Codec. Translates between change events (specifying byte 
-differences between abstract locations) and transmissible data sequences.**
-* A function that uses fountain codes to contstruct network sequences
-out of a set of change events.
-* A function that takes an encoded network sequence and partially
-reassembles a set of change events.
-* A function that combines partially reassembled change events.
+**4 - Codec. Deconstructs and reconstructs state information.**
+* A function outputting the fountain codes of a snapshot.
+* A partially applied function for reassembling snapshots from fountain codes.
+* A function shifting incoming create and update bytes into snapshots.
 
 **5 - Network. Translates between variable length data sequences and 
 multicast packets.**
@@ -49,6 +43,7 @@ broadcasts the sequence to all members of the group.
 * Functions for transmitting information about groups.
 * Functions for receiving information about groups.
 * A function that receives multicast packets and outputs a data sequence.
+* A function for requesting data directly from a specified host.
 
 ------------------------------------------------------------------------
 <div class="footer">
