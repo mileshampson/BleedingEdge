@@ -25,8 +25,8 @@ import scala.Predef._
  * @param byteLookupFn A function providing the bytes representing the state of the location. Defaults to the bytes
  *                    parameter, if the bytes were not available at construction this should specify how to get them.
  */
-class LocationState(val location: String, private val bytes: Array[Byte] = Array.empty,
-                                          val byteLookupFn: () => Array[Byte] = bytes)
+class LocationState private (val location: String, val bytes: Array[Byte] = Array.empty)
+                            (val byteLookupFn: () => Array[Byte] = () => bytes)
 {
   assert(location != null, "Snapshot initialised with invalid location")
   val byteId = new Resource(bytes)
@@ -47,7 +47,7 @@ class LocationState(val location: String, private val bytes: Array[Byte] = Array
   /**
    * Uniquely identifies the contents of the specified byte array without storing it.
    */
-  private final class Resource(val bytes: Array[Byte])
+  final class Resource(val bytes: Array[Byte])
   {
     assert(bytes != null, "Snapshot resource was initialised with invalid state information")
     // This will return the same value for the same resource across multiple JVMs
@@ -85,8 +85,9 @@ class LocationState(val location: String, private val bytes: Array[Byte] = Array
  */
 object LocationState
 {
-  private val emptyState = new LocationState("")
+  private val emptyState = new LocationState("")()
   def apply() = emptyState
+  def apply(location: String, bytes: Array[Byte]) = new LocationState(location, bytes)()
 
   def apply(bytes: Array[Byte], startReadPos: Int, byteLookup: (String, String, Int) => Array[Byte]) =
   {
@@ -96,8 +97,7 @@ object LocationState
     val location = inBuffer.readUTF()
     val length = inBuffer.readInt()
     val hash = inBuffer.readUTF()
-    val lookupUsingReceivedHostname : () => Array[Byte] = byteLookup(inBuffer.readUTF(), hash, length)_
-    val state = new LocationState(location, Array.empty, lookupUsingReceivedHostname)
+    val state = new LocationState(location)(byteLookupFn = () => byteLookup(inBuffer.readUTF(), hash, length))
     state.byteId.resourceHash = hash
     state.byteId.originalLength = length
     state

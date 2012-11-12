@@ -57,7 +57,7 @@ class LocationMutator(val baseDirString: String)
     new File(fullPathString).getParentFile().mkdirs()
     val fullPath = Paths.get(fullPathString)
     Files.createFile(fullPath)
-    new LocationState(fullPathString, bytesFromFile(fullPath.toFile))
+    LocationState(fullPathString, bytesFromFile(fullPath.toFile))
   }
 
   def modifySomeExistingFiles() : Seq[LocationState] =
@@ -84,7 +84,7 @@ class LocationMutator(val baseDirString: String)
             val out = new BufferedWriter(new FileWriter(file))
             out.write(java.lang.Long.toString(rand.nextLong(), 36).substring(1))
             out.close()
-            events = events :+ new LocationState(fullPath, bytesFromFile(file))
+            events = events :+ LocationState(fullPath, bytesFromFile(file))
           }
           // else a move
           else
@@ -108,7 +108,7 @@ class LocationMutator(val baseDirString: String)
             }
             val newPath = Paths.get(newFileName)
             Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
-            events = events :+ new LocationState(newFileName, bytesFromFile(file))
+            events = events :+ LocationState(newFileName, bytesFromFile(file))
           }
         }
       })
@@ -138,7 +138,7 @@ class LocationMutator(val baseDirString: String)
     }
     else
     {
-      potentialEvent = new LocationState(file.getPath, bytesFromFile(file))
+      potentialEvent = LocationState(file.getPath, bytesFromFile(file))
     }
     if (!file.delete())
     {
