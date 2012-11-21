@@ -17,6 +17,7 @@ import scala.Array
 import java.io.{ByteArrayInputStream, DataInputStream, DataOutputStream, ByteArrayOutputStream}
 import java.net.InetAddress
 import scala.Predef._
+import org.bleedingedge.monitoring.logging.LocalLogger
 
 /**
  * Identifies the 'where' and 'what' of a monitored byte array for later comparison.
@@ -29,14 +30,16 @@ class LocationState private (val location: String, val bytes: Array[Byte] = Arra
                             (val byteLookupFn: () => Array[Byte] = () => bytes)
 {
   assert(location != null, "Snapshot initialised with invalid location")
-  val byteId = new Resource(bytes)
+  val byteId = new ResourceId(bytes)
+  LocalLogger.recordDebug("Constructed " + location + " state, " + byteId.originalLength +
+                          " bytes which hashed to " + byteId.resourceHash)
 
   override def equals(that: Any) =
   {
     that match
     {
       case r: LocationState => r.location == location && r.byteId == byteId
-      case _ => false
+      case _ => {assert(assertion = false, message = "Not a location" + that.asInstanceOf[AnyRef].getClass); false}
     }
   }
 
@@ -47,7 +50,7 @@ class LocationState private (val location: String, val bytes: Array[Byte] = Arra
   /**
    * Uniquely identifies the contents of the specified byte array without storing it.
    */
-  final class Resource(val bytes: Array[Byte])
+  final class ResourceId(val bytes: Array[Byte])
   {
     assert(bytes != null, "Snapshot resource was initialised with invalid state information")
     // This will return the same value for the same resource across multiple JVMs
@@ -64,8 +67,8 @@ class LocationState private (val location: String, val bytes: Array[Byte] = Arra
     {
       that match
       {
-        case r: Resource => r.originalLength == originalLength && r.resourceHash == resourceHash
-        case _ => false
+        case r: LocationState#ResourceId => r.originalLength == originalLength && r.resourceHash == resourceHash
+        case _ => {assert(assertion = false, message = "Not a resource " + that.asInstanceOf[AnyRef].getClass); false}
       }
     }
 
@@ -98,6 +101,7 @@ object LocationState
     val length = inBuffer.readInt()
     val hash = inBuffer.readUTF()
     val state = new LocationState(location)(byteLookupFn = () => byteLookup(inBuffer.readUTF(), hash, length))
+    // TODO since this is passed between threads should be totally immutable. Byte lookup probably should be moved elsewhere.
     state.byteId.resourceHash = hash
     state.byteId.originalLength = length
     state

@@ -15,61 +15,89 @@ import collection.mutable.{HashMap => mHMap, MutableList => mList}
 import containers.LocationState
 import java.nio.file._
 import monitoring.logging.LocalLogger
-import java.io.{FileInputStream, BufferedInputStream, File}
+import java.io._
+import actors.Actor
 
 package object Resource
 {
-  private def loadResourcesAt(pathToHandle: Path, scanKeys: mHMap[WatchKey,Path],
-                              watcherToAdd: WatchService, updateList: mList[LocationState])
-  {
-    val fileToHandle = pathToHandle.toFile
-    if (fileToHandle.isDirectory)
-    {
-      scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
-                   StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
-      for (containedFileHandle <- fileToHandle.listFiles())
-        loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, updateList)
-    }
-    else if (fileToHandle.exists)
-      updateList++= Transposition.packChange(new LocationState(pathToHandle.toUri.getPath, bytesFromFile(fileToHandle)))
-  }
 
-  // TODO send message to appropriate actor rather than adding to the second parameter
-  def scanDirectoryForChanges(dirPath: Path, updateList: mList[LocationState])
+  /**
+   * Passes the current state and and subsequent changes in the specified directory to the specified actor.
+   * @param dirPath path representing the root directory. All subdirectories will be included in scanning.
+   * @param stateChangeReceiver an actor to receive a series of LocationState updates for each file presently in the
+   *                            directory or its subdirectories, and any added while the scanning is running.
+   */
+  def scanDirectoryForChanges(dirPath: Path, stateChangeReceiver: Actor)
   {
     val watcher: WatchService = FileSystems.getDefault.newWatchService()
     val watchKeys = mHMap.empty[WatchKey,Path]
-    loadResourcesAt(dirPath, watchKeys, watcher, updateList)
+    loadResourcesAt(dirPath, watchKeys, watcher, stateChangeReceiver)
     try
     {
+      LocalLogger.recordDebug("Starting monitoring of " + dirPath)
       Iterator.continually(watcher.take).foreach(key =>
       {
+        LocalLogger.recordDebug("Taking watch key " + key)
         val it = key.pollEvents().iterator
         while (it.hasNext)
         {
           val path: Path = watchKeys.get(key).get.resolve(it.next().asInstanceOf[WatchEvent[Path]].context())
           LocalLogger.recordDebug("Update at " + path)
-          loadResourcesAt(path, watchKeys, watcher, updateList)
+          loadResourcesAt(path, watchKeys, watcher, stateChangeReceiver)
         }
-        // TODO check !key.reset() => watchKeys -= key
+        // TODO check if removed: !key.reset() => watchKeys -= key
       })
     }
     catch
     {
       case e: InterruptedException =>
       {
+        LocalLogger.recordDebug("Scanning interupted")
         watcher.close()
         LocalLogger.recordDebug(e.getMessage)
       }
     }
   }
 
-  def bytesFromFile(fileName: File): Array[Byte] =
+  private def loadResourcesAt(pathToHandle: Path, scanKeys: mHMap[WatchKey,Path],
+                              watcherToAdd: WatchService, stateChangeReceiver: Actor)
   {
-    val bis = new BufferedInputStream(new FileInputStream(fileName))
-    Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toArray
+    val fileToHandle = pathToHandle.toFile
+    if (fileToHandle.isDirectory)
+    {
+      LocalLogger.recordDebug("Made aware of directory " + pathToHandle + " containing " + fileToHandle.length + " files")
+      scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
+        StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
+      for (containedFileHandle <- fileToHandle.listFiles())
+        loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, stateChangeReceiver)
+    }
+    else if (fileToHandle.exists)
+    {
+      LocalLogger.recordDebug("Made aware of a resource at " + pathToHandle)
+      stateChangeReceiver ! LocationState(pathToHandle.toString, bytesFromFile(fileToHandle))
+    }
   }
 
-//  private def filterNonExistent(toCheck: mMMap[Resource, Path]): Seq[(Resource, Path)] =
-//    toCheck.map{case (resource, paths) => paths.filter(path => path.toFile.exists()).map((resource, _))}.flatten.toSeq
+  def bytesFromFile(fileName: File): Array[Byte] =
+  {
+    var fis: FileInputStream = null
+    var bis: BufferedInputStream = null
+    try {
+      fis = new FileInputStream(fileName)
+      bis = new BufferedInputStream(fis)
+      Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toArray
+    }
+    finally {
+      close(fis)
+      close(bis)
+    }
+  }
+
+  def close(c: Closeable)
+  {
+    assert(c != null, "An existing file should have had a closable constructred for it")
+    try {
+      c.close()
+    }
+  }
 }

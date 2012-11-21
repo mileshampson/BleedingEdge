@@ -11,7 +11,7 @@
 
 package org.bleedingedge.monitoring
 
-import java.nio.file.{StandardCopyOption, Files, Paths}
+import java.nio.file.{FileSystems, StandardCopyOption, Files, Paths}
 import java.io.{File, FileWriter, BufferedWriter}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import util.Random
@@ -22,7 +22,6 @@ import org.bleedingedge.Resource.bytesFromFile
 /**
  * Utility that manages and manipulates a file system location for test purposes.
  */
-// TODO
 class LocationMutator(val baseDirString: String)
 {
   val basePath = Paths.get(baseDirString)
@@ -108,7 +107,7 @@ class LocationMutator(val baseDirString: String)
             }
             val newPath = Paths.get(newFileName)
             Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
-            events = events :+ LocationState(newFileName, bytesFromFile(file))
+            events = events :+ LocationState(newFileName, bytesFromFile(newPath.toFile))
           }
         }
       })
@@ -146,7 +145,14 @@ class LocationMutator(val baseDirString: String)
       else if (!file.canWrite())  "cannot write file" else if (file.list != null && !file.list.isEmpty)
         "containing files " + file.list.mkString(" ") else "unknown failure"
       logDebug("failed to delete " + file + " due to " + cause + ", setting to delete on exit")
-      file.deleteOnExit()
+      // work around java windows bug 6972833
+      Thread.sleep(10)
+      // work around java windows bug 4715154
+      System.gc()   // Can also try file.setWritable(true)
+      if (!file.delete()) {
+        // This usually doesn't work given the above failures. Oh windows.
+        file.deleteOnExit()
+      }
     }
     else
     {

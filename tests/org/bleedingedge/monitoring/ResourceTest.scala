@@ -11,24 +11,27 @@
 
 package org.bleedingedge.monitoring
 
-import org.bleedingedge.DirectoryMonitor
+import collection.mutable.{MutableList => mList}
 import org.bleedingedge.containers.LocationState
+import actors.Actor
+import org.bleedingedge.scheduling.ThreadPool
+import org.bleedingedge.Resource._
+import org.bleedingedge.monitoring.logging.LocalLogger
 
-// TODO needs to be updated
-object MonitorLocationTest extends TestHarness
+object ResourceTest extends TestHarness
 {
   var mutator: org.bleedingedge.monitoring.LocationMutator = _
-  var location: org.bleedingedge.DirectoryMonitor = _
+  var receiver: TestLocationReceiver = _
 
   def setUp()
   {
     mutator = new LocationMutator(System.getProperty("user.dir") + System.getProperty("file.separator") + "testDir")
-    location = new DirectoryMonitor(mutator.basePath)
+    receiver = new TestLocationReceiver()
   }
 
   def tearDown()
   {
-    location.stopChangeScanning()
+    ThreadPool.terminateAll()
     mutator.deleteAll()
   }
 
@@ -42,7 +45,8 @@ object MonitorLocationTest extends TestHarness
     val createdSet: Seq[LocationState] = mutator.createRandom()
     assertChangeEventsMatch(Seq.empty, "Scanning has not started", "Passed pre-scan test")
 
-    location.startChangeScanning()
+    receiver.start()
+    ThreadPool.execute(){scanChanges _}
     assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
     // TODO delete (so also move) are failing due to not receiving an event to trigger a delta from something to nothing
@@ -54,23 +58,52 @@ object MonitorLocationTest extends TestHarness
     assertChangeEventsMatch(deletedSet, "Not all deletes were enqueued", "All deletes enqueued")
   }
 
-  def combinedOperationTests()
-  {
-  }
-
   def assertChangeEventsMatch(expected: Seq[LocationState], failMsg: String, passMsg: String)
   {
     var numLoops = 0
-    while(location.numberOfChanges != expected.size && numLoops < 10)
+    while(receiver.numberOfChanges != expected.size && numLoops < 10)
     {
       numLoops+=1
       Thread.sleep(100)
     }
-    val actual: Seq[LocationState] = location.dequeueChanges()
+    val actual: Seq[LocationState] = receiver.dequeueChanges()
     val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
     val additionalPassInfo = " with expected result [" + actual.mkString(",") + "]."
     // Compare unordered
     assertCondition(expected.toSet.subsetOf(actual.toSet) && actual.toSet.subsetOf(expected.toSet),
                     failMsg + additionalFailInfo, passMsg + additionalPassInfo)
   }
+
+  def scanChanges():Object =
+  {
+    scanDirectoryForChanges(mutator.basePath, receiver)
+    LocalLogger.recordDebug("Scanning terminated")
+    null
+  }
+}
+
+class TestLocationReceiver extends Actor
+{
+  var updateList: mList[LocationState] = mList.empty
+  def act()
+  {
+    while(true)
+    {
+      receive
+      {
+        case state:LocationState =>
+          LocalLogger.recordDebug("Received a location state " + state)
+          updateList += state
+      }
+    }
+  }
+
+  def dequeueChanges(): Seq[LocationState] =
+  {
+    val changesUntilNow = updateList.clone().toSeq
+    updateList.clear()
+    changesUntilNow
+  }
+
+  def numberOfChanges = updateList.length
 }
