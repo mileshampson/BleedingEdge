@@ -88,8 +88,9 @@ class LocationState private (val location: String, val bytes: Array[Byte] = Arra
  */
 object LocationState
 {
-  private val emptyState = new LocationState("")()
+  lazy private val emptyState = new LocationState("")()
   def apply() = emptyState
+  def apply(location: String) = new LocationState(location)()
   def apply(location: String, bytes: Array[Byte]) = new LocationState(location, bytes)()
 
   def apply(bytes: Array[Byte], startReadPos: Int, byteLookup: (String, String, Int) => Array[Byte]) =

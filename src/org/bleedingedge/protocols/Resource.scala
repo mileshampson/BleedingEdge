@@ -11,12 +11,13 @@
 
 package org.bleedingedge
 
-import collection.mutable.{HashMap => mHMap, MutableList => mList}
+import collection.mutable.{HashMap => mHMap}
 import containers.LocationState
 import java.nio.file._
 import monitoring.logging.LocalLogger
 import java.io._
 import actors.Actor
+import scala.collection.JavaConversions._
 
 package object Resource
 {
@@ -31,21 +32,24 @@ package object Resource
   {
     val watcher: WatchService = FileSystems.getDefault.newWatchService()
     val watchKeys = mHMap.empty[WatchKey,Path]
-    loadResourcesAt(dirPath, watchKeys, watcher, stateChangeReceiver)
+    loadResourcesAt(dirPath, watchKeys, watcher, stateChangeReceiver, existingKey=null)
     try
     {
       LocalLogger.recordDebug("Starting monitoring of " + dirPath)
       Iterator.continually(watcher.take).foreach(key =>
       {
-        LocalLogger.recordDebug("Taking watch key " + key)
-        val it = key.pollEvents().iterator
-        while (it.hasNext)
+        val keyPathOption: Option[Path] = watchKeys.get(key)
+        LocalLogger.recordDebug("Taking watch key " + keyPathOption)
+        for(event <- key.pollEvents().asInstanceOf[java.util.List[WatchEvent[Path]]])  // TODO (... if key.isValid()) to work around double deletions received when file is deletion followed by its containing dir. Sometimes this causes missed events on windows though...
         {
-          val path: Path = watchKeys.get(key).get.resolve(it.next().asInstanceOf[WatchEvent[Path]].context())
-          LocalLogger.recordDebug("Update at " + path)
-          loadResourcesAt(path, watchKeys, watcher, stateChangeReceiver)
+          val path: Path = keyPathOption.get.resolve(event.context())
+          LocalLogger.recordDebug("Change at " + path)
+          loadResourcesAt(path, watchKeys, watcher, stateChangeReceiver, key)
         }
-        // TODO check if removed: !key.reset() => watchKeys -= key
+        if (!key.reset()) {
+          LocalLogger.recordDebug("Watch key reset at " + keyPathOption.getOrElse("unknown or removed location"))
+          loadResourcesAt(keyPathOption.get, watchKeys, watcher, stateChangeReceiver, key)
+        }
       })
     }
     catch
@@ -60,21 +64,35 @@ package object Resource
   }
 
   private def loadResourcesAt(pathToHandle: Path, scanKeys: mHMap[WatchKey,Path],
-                              watcherToAdd: WatchService, stateChangeReceiver: Actor)
+                              watcherToAdd: WatchService, stateChangeReceiver: Actor, existingKey: WatchKey)
   {
     val fileToHandle = pathToHandle.toFile
     if (fileToHandle.isDirectory)
     {
-      LocalLogger.recordDebug("Made aware of directory " + pathToHandle + " containing " + fileToHandle.length + " files")
-      scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
-        StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
-      for (containedFileHandle <- fileToHandle.listFiles())
-        loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, stateChangeReceiver)
+      if (fileToHandle.exists)
+      {
+        LocalLogger.recordDebug("Made aware of directory " + pathToHandle + " containing " + fileToHandle.length + " files")
+        scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
+          StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
+        for (containedFileHandle <- fileToHandle.listFiles())
+          loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, stateChangeReceiver, existingKey)
+      }
+      else
+      {
+        LocalLogger.recordDebug("Made aware of deletion of directory " + pathToHandle)
+        pathToHandle.register(watcherToAdd)
+        scanKeys -= existingKey
+      }
     }
     else if (fileToHandle.exists)
     {
       LocalLogger.recordDebug("Made aware of a resource at " + pathToHandle)
       stateChangeReceiver ! LocationState(pathToHandle.toString, bytesFromFile(fileToHandle))
+    }
+    else
+    {
+      LocalLogger.recordDebug("Made aware of a deletion of resource at " + pathToHandle)
+      stateChangeReceiver ! LocationState(pathToHandle.toString)
     }
   }
 

@@ -56,6 +56,7 @@ class LocationMutator(val baseDirString: String)
     new File(fullPathString).getParentFile().mkdirs()
     val fullPath = Paths.get(fullPathString)
     Files.createFile(fullPath)
+    logDebug("Creating Location State for file " + fullPathString)
     LocationState(fullPathString, bytesFromFile(fullPath.toFile))
   }
 
@@ -83,6 +84,7 @@ class LocationMutator(val baseDirString: String)
             val out = new BufferedWriter(new FileWriter(file))
             out.write(java.lang.Long.toString(rand.nextLong(), 36).substring(1))
             out.close()
+            logDebug("Updating Location State for file at " + fullPath)
             events = events :+ LocationState(fullPath, bytesFromFile(file))
           }
           // else a move
@@ -107,6 +109,7 @@ class LocationMutator(val baseDirString: String)
             }
             val newPath = Paths.get(newFileName)
             Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
+            logDebug("Moving location state for file at " + oldPath + " to " + newPath)
             events = events :+ LocationState(newFileName, bytesFromFile(newPath.toFile))
           }
         }
@@ -134,15 +137,17 @@ class LocationMutator(val baseDirString: String)
       {
         deletePath(child, events)
       }
+      potentialEvent = LocationState(file.getPath)
     }
     else
     {
+      logDebug("Deleting location state for file at " + file.getPath)
       potentialEvent = LocationState(file.getPath, bytesFromFile(file))
     }
     if (!file.delete())
     {
       val cause: String = if (!file.exists) "file does not exist" else if (!file.canRead) "cannot read file"
-      else if (!file.canWrite())  "cannot write file" else if (file.list != null && !file.list.isEmpty)
+      else if (!file.canWrite)  "cannot write file" else if (file.list != null && !file.list.isEmpty)
         "containing files " + file.list.mkString(" ") else "unknown failure"
       logDebug("failed to delete " + file + " due to " + cause + ", setting to delete on exit")
       // work around java windows bug 6972833

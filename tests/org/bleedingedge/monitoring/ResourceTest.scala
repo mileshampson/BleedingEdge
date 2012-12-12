@@ -11,7 +11,7 @@
 
 package org.bleedingedge.monitoring
 
-import collection.mutable.{MutableList => mList}
+import collection.mutable.{Set => mSet}
 import org.bleedingedge.containers.LocationState
 import actors.Actor
 import org.bleedingedge.scheduling.ThreadPool
@@ -49,9 +49,7 @@ object ResourceTest extends TestHarness
     ThreadPool.execute(){scanChanges _}
     assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
-    // TODO delete (so also move) are failing due to not receiving an event to trigger a delta from something to nothing
-    // TODO look at whether we just get one file system event for the activity
-    val changedSet: Seq[LocationState] = mutator.modifySomeExistingFiles()
+    val changedSet: Seq[LocationState] = mutator.modifySomeExistingFiles()    // TODO some still failing
     assertChangeEventsMatch(changedSet, "Not all modifies were enqueued", "All modifies enqueued")
 
     val deletedSet: Seq[LocationState] = mutator.deleteAll()
@@ -84,7 +82,7 @@ object ResourceTest extends TestHarness
 
 class TestLocationReceiver extends Actor
 {
-  var updateList: mList[LocationState] = mList.empty
+  var updateList: mSet[LocationState] = mSet.empty
   def act()
   {
     while(true)
@@ -105,5 +103,5 @@ class TestLocationReceiver extends Actor
     changesUntilNow
   }
 
-  def numberOfChanges = updateList.length
+  def numberOfChanges = updateList.size
 }
