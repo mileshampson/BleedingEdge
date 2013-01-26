@@ -29,6 +29,7 @@ class LocationMutator(val baseDirString: String)
   Files.createDirectories(basePath)
   // Allow the test to be replayed if necessary
   val randomSeed = System.currentTimeMillis()
+  //val randomSeed = 1359175822874l
   val rand = new Random(randomSeed)
   logDebug("set up with seed " + randomSeed + " and base directory created at " + baseDirString)
 
@@ -110,6 +111,7 @@ class LocationMutator(val baseDirString: String)
             val newPath = Paths.get(newFileName)
             Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
             logDebug("Moving location state for file at " + oldPath + " to " + newPath)
+            events = events :+ LocationState(oldPathString)
             events = events :+ LocationState(newFileName, bytesFromFile(newPath.toFile))
           }
         }

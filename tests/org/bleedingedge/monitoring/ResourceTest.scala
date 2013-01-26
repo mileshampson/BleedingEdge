@@ -49,7 +49,7 @@ object ResourceTest extends TestHarness
     ThreadPool.execute(){scanChanges _}
     assertChangeEventsMatch(createdSet, "Not all creates were enqueued", "All creates enqueued")
 
-    val changedSet: Seq[LocationState] = mutator.modifySomeExistingFiles()    // TODO some still failing
+    val changedSet: Seq[LocationState] = mutator.modifySomeExistingFiles()
     assertChangeEventsMatch(changedSet, "Not all modifies were enqueued", "All modifies enqueued")
 
     val deletedSet: Seq[LocationState] = mutator.deleteAll()
@@ -59,10 +59,10 @@ object ResourceTest extends TestHarness
   def assertChangeEventsMatch(expected: Seq[LocationState], failMsg: String, passMsg: String)
   {
     var numLoops = 0
-    while(receiver.numberOfChanges != expected.size && numLoops < 10)
+    while(receiver.numberOfChanges != expected.size && numLoops < 50)
     {
       numLoops+=1
-      Thread.sleep(100)
+      Thread.sleep(50)
     }
     val actual: Seq[LocationState] = receiver.dequeueChanges()
     val additionalFailInfo = ". Expected [" + expected.mkString(",") + "] rather than [" + actual.mkString(",") + "]."
