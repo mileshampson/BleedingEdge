@@ -11,7 +11,7 @@
 
 package org.bleedingedge.monitoring
 
-import java.nio.file.{FileSystems, StandardCopyOption, Files, Paths}
+import java.nio.file._
 import java.io.{File, FileWriter, BufferedWriter}
 import org.bleedingedge.monitoring.logging.LocalLogger
 import util.Random
@@ -29,7 +29,7 @@ class LocationMutator(val baseDirString: String)
   Files.createDirectories(basePath)
   // Allow the test to be replayed if necessary
   val randomSeed = System.currentTimeMillis()
-  //val randomSeed = 1359175822874l
+  //val randomSeed = 1359861166644l
   val rand = new Random(randomSeed)
   logDebug("set up with seed " + randomSeed + " and base directory created at " + baseDirString)
 
@@ -68,56 +68,70 @@ class LocationMutator(val baseDirString: String)
 
   def modifySomeExistingFiles(toModify: File) : Seq[LocationState] =
   {
-    var events: Seq[LocationState] = Seq.empty
+    var events: List[LocationState] = List.empty
     toModify.listFiles().foreach(file =>
       if (file.isDirectory()) {
         events ++= modifySomeExistingFiles(file)
       } else {
-        // To do or not to do
-        if (rand.nextBoolean())
+        try {
+          events ++= changeFile(file)
+        }
+        catch
         {
-          // An update
-          if (rand.nextBoolean())
-          {
-            val fullPath = file.getAbsolutePath
-            val fullPathType = Paths.get(fullPath)
-            // Write a small amount of random characters to the file
-            val out = new BufferedWriter(new FileWriter(file))
-            out.write(java.lang.Long.toString(rand.nextLong(), 36).substring(1))
-            out.close()
-            logDebug("Updating Location State for file at " + fullPath)
-            events = events :+ LocationState(fullPath, bytesFromFile(file))
-          }
-          // else a move
-          else
-          {
-            val oldPathString = file.getAbsolutePath
-            val oldPath = Paths.get(oldPathString)
-            var newFileName = baseDirString
-            // A rename (move in the same directory)
-            if (rand.nextBoolean())
-            {
-              newFileName = file.getParent + System.getProperty("file.separator") +
-                            java.lang.Long.toString(rand.nextLong(), 36).substring(1)
-            }
-            // else a move anywhere in the testDir
-            else
-            {
-              val numDirs = if (rand.nextInt(5) > 1) 1 else (rand.nextInt(5) + 1)
-              newFileName += System.getProperty("file.separator") + Seq.fill(numDirs)(java.lang.Long.toString(
-                rand.nextLong(), 36).substring(1)).mkString(System.getProperty("file.separator"))
-              new File(newFileName).getParentFile().mkdirs()
-            }
-            val newPath = Paths.get(newFileName)
-            Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
-            logDebug("Moving location state for file at " + oldPath + " to " + newPath)
-            events = events :+ LocationState(oldPathString)
-            events = events :+ LocationState(newFileName, bytesFromFile(newPath.toFile))
-          }
+          case ace: AccessDeniedException => logDebug("File in use, could not modify")
         }
       })
     events
   }
+
+  private def changeFile(toModify: File) : Seq[LocationState] =
+  {
+    var events: Seq[LocationState] = Seq.empty
+    // To do or not to do
+    if (rand.nextBoolean())
+    {
+      // An update
+      if (rand.nextBoolean())
+      {
+        val fullPath = toModify.getAbsolutePath
+        val fullPathType = Paths.get(fullPath)
+        // Write a small amount of random characters to the file
+        val out = new BufferedWriter(new FileWriter(toModify))
+        out.write(java.lang.Long.toString(rand.nextLong(), 36).substring(1))
+        out.close()
+        logDebug("Updating Location State for file at " + fullPath)
+        events = events :+ LocationState(fullPath, bytesFromFile(toModify))
+      }
+      // else a move
+      else
+      {
+        val oldPathString = toModify.getAbsolutePath
+        val oldPath = Paths.get(oldPathString)
+        var newFileName = baseDirString
+        // A rename (move in the same directory)
+        if (rand.nextBoolean())
+        {
+          newFileName = toModify.getParent + System.getProperty("file.separator") +
+            java.lang.Long.toString(rand.nextLong(), 36).substring(1)
+        }
+        // else a move anywhere in the testDir
+        else
+        {
+          val numDirs = if (rand.nextInt(5) > 1) 1 else (rand.nextInt(5) + 1)
+          newFileName += System.getProperty("file.separator") + Seq.fill(numDirs)(java.lang.Long.toString(
+            rand.nextLong(), 36).substring(1)).mkString(System.getProperty("file.separator"))
+          new File(newFileName).getParentFile().mkdirs()
+        }
+        val newPath = Paths.get(newFileName)
+        Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING)
+        logDebug("Moving location state for file at " + oldPath + " to " + newPath)
+        events = events :+ LocationState(oldPathString)
+        events = events :+ LocationState(newFileName, bytesFromFile(newPath.toFile))
+      }
+    }
+    events
+  }
+
 
   def deleteAll(): Seq[LocationState] =
   {
@@ -157,7 +171,7 @@ class LocationMutator(val baseDirString: String)
       // work around java windows bug 4715154
       System.gc()   // Can also try file.setWritable(true)
       if (!file.delete()) {
-        // This usually doesn't work given the above failures. Oh windows.
+        // This usually doesn't work given the above. Only solution to buggy NIO.2 seems to be DIY native file watching.
         file.deleteOnExit()
       }
     }

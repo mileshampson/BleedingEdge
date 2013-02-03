@@ -40,14 +40,16 @@ package object Resource
       {
         val keyPathOption: Option[Path] = watchKeys.get(key)
         LocalLogger.recordDebug("Taking watch key " + keyPathOption)
-        for(event <- key.pollEvents().asInstanceOf[java.util.List[WatchEvent[Path]]])  // TODO (... if key.isValid()) to work around double deletions received when file is deletion followed by its containing dir. Sometimes this causes missed events on windows though...
+        for(event <- key.pollEvents().asInstanceOf[java.util.List[WatchEvent[Path]]])
         {
           val path: Path = keyPathOption.get.resolve(event.context())
           LocalLogger.recordDebug("Change at " + path)
           loadResourcesAt(path, watchKeys, watcher, stateChangeReceiver, key)
         }
+        // Re-queue the key for more events
         if (!key.reset()) {
-          LocalLogger.recordDebug("Watch key reset at " + keyPathOption.getOrElse("unknown or removed location"))
+          LocalLogger.recordDebug("Watch key at " + keyPathOption.getOrElse("unknown or removed location") +
+                                  " could not be reset as the location was invalid. Removing watch on this location.")
           loadResourcesAt(keyPathOption.get, watchKeys, watcher, stateChangeReceiver, key)
         }
       })
@@ -67,21 +69,17 @@ package object Resource
                               watcherToAdd: WatchService, stateChangeReceiver: Actor, existingKey: WatchKey)
   {
     val fileToHandle = pathToHandle.toFile
+    // On linux this works for deleted directories. Not so on windows.
     if (fileToHandle.isDirectory)
     {
       if (fileToHandle.exists)
       {
-        LocalLogger.recordDebug("Made aware of directory " + pathToHandle + " containing " + fileToHandle.length + " files")
+        val containedFiles = fileToHandle.listFiles()
+        LocalLogger.recordDebug("Made aware of directory " + pathToHandle + " containing " + containedFiles.length + " files")
+        for (containedFileHandle <- containedFiles)
+          loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, stateChangeReceiver, existingKey)
         scanKeys.put(pathToHandle.register(watcherToAdd, StandardWatchEventKinds.ENTRY_CREATE,
           StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), pathToHandle)
-        for (containedFileHandle <- fileToHandle.listFiles())
-          loadResourcesAt(containedFileHandle.toPath, scanKeys, watcherToAdd, stateChangeReceiver, existingKey)
-      }
-      else
-      {
-        LocalLogger.recordDebug("Made aware of deletion of directory " + pathToHandle)
-        pathToHandle.register(watcherToAdd)
-        scanKeys -= existingKey
       }
     }
     else if (fileToHandle.exists)
@@ -89,10 +87,35 @@ package object Resource
       LocalLogger.recordDebug("Made aware of a resource at " + pathToHandle)
       stateChangeReceiver ! LocationState(pathToHandle.toString, bytesFromFile(fileToHandle))
     }
-    else
+    // After deletion, isDirectory is OS dependent. So catch both file and dir deletions here and check this ourselves.
+    if (!fileToHandle.exists)
     {
-      LocalLogger.recordDebug("Made aware of a deletion of resource at " + pathToHandle)
+      removeWatch(pathToHandle, scanKeys, watcherToAdd, existingKey)
       stateChangeReceiver ! LocationState(pathToHandle.toString)
+    }
+  }
+
+  /**
+   * Deletion events on windows do not specify the type of thing being deleted. We need to check if it was a
+   * directory to prevent file deletions removing the watch on their parent directory.
+   * @param pathToHandle
+   * @param scanKeys
+   * @param watcherToAdd
+   * @param existingKey
+   */
+  def removeWatch(pathToHandle: Path, scanKeys: mHMap[WatchKey,Path], watcherToAdd: WatchService, existingKey: WatchKey)
+  {
+    // If this path was previously added against a watch key, it was previously a directory
+    if (scanKeys.values.contains(pathToHandle))
+    {
+      LocalLogger.recordDebug("Made aware of a deletion of directory at " + pathToHandle)
+      // Remove the entry from our list
+      scanKeys -= existingKey
+      // There is no API for de-registering the watcher, thus preventing subsequent deletion of the directory on windows
+      // until the watch service is stopped (bug 6972833).
+    }
+    else {
+      LocalLogger.recordDebug("Made aware of a deletion of resource at " + pathToHandle)
     }
   }
 
